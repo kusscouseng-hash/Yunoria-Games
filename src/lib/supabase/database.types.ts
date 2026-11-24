@@ -316,6 +316,7 @@ export type Database = {
     };
     Functions: {
       submit_game_score: { Args: { p_game: string; p_score: number; p_duration_ms: number }; Returns: unknown };
+      claim_arcade_minute: { Args: Record<string, never>; Returns: unknown };
       set_game_rank_system: { Args: { p_system: string }; Returns: undefined };
       my_game_stats: { Args: Record<string, never>; Returns: unknown };
       game_leaderboard: {

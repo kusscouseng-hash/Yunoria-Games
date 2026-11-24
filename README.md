@@ -20,6 +20,13 @@ Kostenlose Browser-Spiele mit Leveln, Rängen, Gilden und Wochen-Ranglisten – 
 2. Eintrag in `src/lib/games/registry.ts` und in `GAMES` von `game-shell.tsx`.
 3. Regel in `game_rules` (neue Migration): Punkte pro Sekunde, Mindestdauer, Höchstpunkte, Punkte pro XP.
 
+## Mehr Spiele (GamePix)
+
+- Unter `/arcade` werden lizenzierte Browserspiele von GamePix eingebettet (Werbung läuft über GamePix, Umsatzbeteiligung laut GamePix-Partnervertrag).
+- Voraussetzung: eigene Partner-ID als `GAMEPIX_SID` in Vercel. Ohne sie bleibt der Bereich aus.
+- Nur familienfreundliche Kategorien, zusätzlich Wortfilter (`src/lib/arcade/gamepix.ts`).
+- Spiel lädt erst nach Klick (Datenschutz). Spielzeit-Bonus: 2 XP pro aktiver Minute, max. 30 XP/Tag (Migration `20261124200000_arcade_playtime.sql`).
+
 ## Tests
 
 `npx next start -p 3124` und dann `node tests/e2e/games-test.mjs`.

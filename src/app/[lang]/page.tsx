@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/community/avatar";
+import { ArcadeCard } from "@/components/arcade/arcade-card";
 import { GameArt } from "@/components/games/game-art";
 import { GameCard } from "@/components/games/game-card";
 import { GuildEmblem } from "@/components/guilds/guild-tag";
@@ -10,6 +11,7 @@ import { withLocale, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getArcadeCatalog, gamepixSid } from "@/lib/arcade/gamepix";
 import { GAME_RANK_SYSTEMS, gameRankForLevel } from "@/lib/game-ranks";
 import { GAMES, GAME_OF_THE_WEEK, getGame } from "@/lib/games/registry";
 import { getGuildBoard } from "@/lib/guilds/queries";
@@ -55,6 +57,10 @@ export default async function HomePage() {
           <GamesWithBests locale={locale} dict={dict} />
         </Suspense>
       </section>
+
+      <Suspense fallback={null}>
+        <MoreGames locale={locale} dict={dict} />
+      </Suspense>
 
       <section className="grid gap-5 md:grid-cols-2">
         <Suspense fallback={<div className="h-72 animate-pulse rounded-2xl bg-surface" />}>
@@ -203,5 +209,29 @@ async function TopGuilds({ locale, dict }: { locale: Locale; dict: Dictionary })
         {t.fullRanking} →
       </Link>
     </div>
+  );
+}
+
+async function MoreGames({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+  const sid = gamepixSid();
+  if (!sid) return null;
+  const games = (await getArcadeCatalog(sid)).slice(0, 10);
+  if (games.length === 0) return null;
+  const t = dict.arcade;
+  const label = (c: string) => (t.categories as Record<string, string>)[c] ?? c;
+  return (
+    <section>
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <h2 className="text-2xl font-black tracking-tight">{t.homeTitle}</h2>
+        <Link href={withLocale(locale, "/arcade")} className="text-sm font-semibold text-accent hover:text-accent-hover">
+          {t.showAll} →
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
+        {games.map((g) => (
+          <ArcadeCard key={g.namespace} game={g} locale={locale} categoryLabel={label(g.category)} />
+        ))}
+      </div>
+    </section>
   );
 }
