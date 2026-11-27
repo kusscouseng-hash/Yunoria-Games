@@ -76,6 +76,8 @@ export type Tile =
       published: number;
       description: string;
       game: ArcadeGame;
+      /** Vom Admin mit „Aufnehmen“ empfohlen */
+      featured?: boolean;
     };
 
 export function isSiteCategory(v: string): v is SiteCategory {
@@ -100,30 +102,41 @@ export function ownTiles(locale: Locale): Tile[] {
 }
 
 /**
- * Partner-Spiele für die öffentliche Seite: die handverlesene Auswahl aus dem Admin-Bereich.
- * Solange noch nichts ausgewählt ist, wie bisher die bestbewerteten GamePix-Spiele.
- * Versteckte Spiele fallen immer raus.
+ * Partner-Spiele für die öffentliche Seite: ALLE Spiele beider Partner (abwechselnd gemischt),
+ * die vom Admin empfohlenen („Aufnehmen“) ganz vorne. Versteckte Spiele fallen immer raus.
  */
 export async function arcadeTiles(locale: Locale): Promise<Tile[]> {
   const active = activeSources();
   if (active.length === 0) return [];
-  const picks = await getPicks();
-  const hidden = await hiddenIds();
-  const games = (picks && picks.length > 0 ? picks.filter((g) => active.includes(g.source)) : await providerCatalog("gpx")).filter(
-    (g) => !hidden.has(g.id),
-  );
-  return games.map((g) => ({
-    kind: "arcade" as const,
-    key: `${g.source}:${g.id}`,
-    href: withLocale(locale, `/arcade/${g.id}`),
-    title: g.title,
-    category: g.category,
-    icon: g.icon,
-    cover: g.banner,
-    published: g.published,
-    description: g.description,
-    game: g,
-  }));
+  const [picks, hidden, ...catalogs] = await Promise.all([getPicks(), hiddenIds(), ...active.map((s) => providerCatalog(s))]);
+  const featured = (picks ?? []).filter((g) => active.includes(g.source));
+  const featuredIds = new Set(featured.map((g) => g.id));
+
+  // Kataloge reißverschlussartig mischen, damit in jeder Reihe beide Partner vorkommen
+  const mixed: ArcadeGame[] = [];
+  const longest = Math.max(0, ...catalogs.map((c) => c.length));
+  for (let i = 0; i < longest; i++) for (const c of catalogs) if (c[i]) mixed.push(c[i]);
+
+  const seen = new Set<string>();
+  const out: Tile[] = [];
+  for (const g of [...featured, ...mixed]) {
+    if (seen.has(g.id) || hidden.has(g.id)) continue;
+    seen.add(g.id);
+    out.push({
+      kind: "arcade" as const,
+      key: `${g.source}:${g.id}`,
+      href: withLocale(locale, `/arcade/${g.id}`),
+      title: g.title,
+      category: g.category,
+      icon: g.icon,
+      cover: g.banner,
+      published: g.published,
+      description: g.description,
+      game: g,
+      featured: featuredIds.has(g.id),
+    });
+  }
+  return out;
 }
 
 /** Alle Spiele: eigene zuerst, dann die Partner-Spiele */

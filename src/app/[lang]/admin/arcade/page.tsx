@@ -15,8 +15,8 @@ export const metadata: Metadata = { robots: { index: false } };
 const PER_PAGE = 60;
 
 /**
- * Admin-Bereich: Partner-Spiele durchsehen, testen und in die handverlesene Auswahl
- * aufnehmen. Die öffentliche Seite zeigt nur ausgewählte Spiele (sobald es mindestens eins gibt).
+ * Admin-Bereich: Partner-Spiele durchsehen, testen, empfehlen („Aufnehmen“) oder verstecken.
+ * Die öffentliche Seite zeigt alle Spiele außer den versteckten, die empfohlenen ganz vorne.
  */
 export default async function AdminArcadePage({ searchParams }: PageProps<"/[lang]/admin/arcade">) {
   const { locale } = await getDictionary();
@@ -69,7 +69,7 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
   };
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "picked", label: `Meine Auswahl (${picks?.length ?? 0})` },
+    { key: "picked", label: `Empfohlen (${picks?.length ?? 0})` },
     ...sources.map((s) => ({ key: s, label: providerInfo(s).name })),
     { key: "hidden", label: `Versteckt (${hidden?.length ?? 0})` },
   ];
@@ -79,9 +79,9 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
       <div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Spiele auswählen</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted">
-          Such dir die besten Spiele aus. Auf der Seite erscheinen nur Spiele aus „Meine Auswahl“ (plus eure eigenen Spiele).
-          Solange die Auswahl leer ist, werden wie bisher die GamePix-Spiele gezeigt. Mit „Testen“ öffnest du ein Spiel in einem neuen Tab.
-          Mit „Verstecken“ verschwindet ein Spiel für alle – auch aus deinen Listen hier. Unter „Versteckt“ kannst du es wieder zeigen.
+          Auf der Seite erscheinen automatisch alle Spiele von GamePix und GameDistribution. Mit „Aufnehmen“ kommt ein Spiel in die Reihe
+          „Empfohlen“ ganz oben auf der Startseite. Mit „Verstecken“ verschwindet ein langweiliges Spiel für alle – auch aus deinen Listen hier.
+          Unter „Versteckt“ kannst du es wieder zeigen. Mit „Testen“ öffnest du ein Spiel in einem neuen Tab.
         </p>
         {picks === null && (
           <p className="mt-3 rounded-xl border border-border bg-surface-2 p-3 text-sm font-semibold">
@@ -141,7 +141,7 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
       {shown.length === 0 ? (
         <p className="rounded-2xl border border-border bg-surface p-6 text-center text-sm text-muted">
           {tab === "picked"
-            ? "Noch keine Spiele ausgewählt. Wechsle oben zu einem Anbieter und klicke bei guten Spielen auf „Aufnehmen“."
+            ? "Noch keine Spiele empfohlen. Wechsle oben zu einem Anbieter und klicke bei richtig guten Spielen auf „Aufnehmen“."
             : tab === "hidden"
               ? "Keine versteckten Spiele."
               : "Keine Spiele gefunden."}

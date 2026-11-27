@@ -157,6 +157,7 @@ export const en = {
     showAll: "Show all",
     forYou: "Play now",
     originalsRow: "Yunoria Originals – earn XP and climb the ranks",
+    featuredRow: "Recommended",
     newRow: "New games",
     popularRow: "Popular right now",
     gamesCount: "{n} games",

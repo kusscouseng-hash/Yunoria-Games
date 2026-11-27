@@ -159,6 +159,7 @@ export const de: Dictionary = {
     showAll: "Alle anzeigen",
     forYou: "Jetzt spielen",
     originalsRow: "Yunoria Originals – sammle XP und steig im Rang auf",
+    featuredRow: "Empfohlen",
     newRow: "Neue Spiele",
     popularRow: "Gerade beliebt",
     gamesCount: "{n} Spiele",

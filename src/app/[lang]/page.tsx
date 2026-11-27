@@ -28,7 +28,8 @@ export default async function HomePage() {
   const { locale, dict } = await getDictionary();
   const b = dict.browse;
   const data = await allTiles(locale);
-  const top = data.all.slice(0, 12);
+  const featured = data.arcade.filter((t) => t.kind === "arcade" && t.featured);
+  const top = data.all.filter((t) => !(t.kind === "arcade" && t.featured)).slice(0, 12);
 
   return (
     <div className="w-full space-y-9 px-4 py-5 sm:px-6">
@@ -66,6 +67,19 @@ export default async function HomePage() {
         <RecentRow locale={locale} dict={dict} />
       </Suspense>
 
+      {featured.length > 0 && (
+        <TileRow
+          size="lg"
+          title={b.featuredRow}
+          icon="💎"
+          tint="#a78bfa"
+          showAll={b.showAll}
+          prevLabel={b.prev}
+          nextLabel={b.next}
+          tiles={featured.slice(0, 24)}
+          originalLabel={b.original}
+        />
+      )}
       <TileRow
         size="lg"
         title={b.popularRow}
@@ -115,7 +129,8 @@ export default async function HomePage() {
             </span>
             {b.allRow}
           </h2>
-          <Mosaic tiles={data.all.slice(12)} originalLabel={b.original} />
+          {/* Höchstens 400, damit die Startseite schnell bleibt – alle Spiele gibt es unter den Kategorien */}
+          <Mosaic tiles={data.all.slice(12, 412)} originalLabel={b.original} />
         </section>
       )}
 
