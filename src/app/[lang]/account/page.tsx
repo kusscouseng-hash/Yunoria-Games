@@ -19,7 +19,7 @@ import { levelFromXp } from "@/lib/levels";
 import { updateRankSystem } from "@/lib/profile/actions";
 import { rankTier } from "@/lib/ranks";
 import { GAME_RANK_SYSTEMS, gameRankForLevel } from "@/lib/game-ranks";
-import { GAMES } from "@/lib/games/registry";
+import { VISIBLE_GAMES } from "@/lib/games/registry";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/community/avatar";
 import { AvatarForm } from "@/components/profile/avatar-form";
@@ -192,9 +192,11 @@ async function AccountDetails({
       </Suspense>
 
       {/* Eigene Bestwerte */}
-      <Suspense fallback={null}>
-        <MyBests locale={locale} dict={dict} />
-      </Suspense>
+      {VISIBLE_GAMES.length > 0 && (
+        <Suspense fallback={null}>
+          <MyBests locale={locale} dict={dict} />
+        </Suspense>
+      )}
 
       {/* Eigener Aktivitäts-Kalender (nur für einen selbst sichtbar) */}
       <Suspense fallback={<Card className="h-56 animate-pulse" />}>
@@ -262,7 +264,7 @@ async function MyBests({ locale, dict }: { locale: Locale; dict: Dictionary }) {
         </p>
       </div>
       <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-        {GAMES.map((g) => (
+        {VISIBLE_GAMES.map((g) => (
           <li key={g.slug}>
             <Link href={withLocale(locale, `/play/${g.slug}`)} className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm hover:border-accent/60">
               <span className="font-semibold">{g.title[locale]}</span>

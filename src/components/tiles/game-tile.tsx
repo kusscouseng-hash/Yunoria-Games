@@ -57,11 +57,14 @@ export function GameTile({
 }
 
 /** Breitere Kachel mit Titelbild für die waagerechten Reihen */
-export function WideTile({ tile, originalLabel }: { tile: Tile; originalLabel: string }) {
+export function WideTile({ tile, originalLabel, size = "md" }: { tile: Tile; originalLabel: string; size?: "md" | "lg" }) {
   return (
     <Link
       href={tile.href}
-      className="group relative block w-40 shrink-0 snap-start overflow-hidden rounded-xl bg-surface-2 outline-none ring-accent transition-transform duration-200 hover:-translate-y-1 focus-visible:ring-4 sm:w-52"
+      className={cn(
+        "group relative block shrink-0 snap-start overflow-hidden rounded-2xl bg-surface-2 shadow-[0_4px_14px_rgb(0_0_0/0.3)] outline-none ring-accent transition-transform duration-200 hover:-translate-y-1 focus-visible:ring-4",
+        size === "lg" ? "w-64 sm:w-80" : "w-44 sm:w-60",
+      )}
     >
       <div className="relative aspect-[8/5] overflow-hidden">
         {tile.kind === "own" ? (
@@ -76,7 +79,7 @@ export function WideTile({ tile, originalLabel }: { tile: Tile; originalLabel: s
           </span>
         )}
       </div>
-      <p className="truncate px-2.5 py-2 text-sm font-semibold">{tile.title}</p>
+      <p className={cn("truncate px-3 py-2.5 font-bold", size === "lg" ? "text-base" : "text-sm")}>{tile.title}</p>
     </Link>
   );
 }

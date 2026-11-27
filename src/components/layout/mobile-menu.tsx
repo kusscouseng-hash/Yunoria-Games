@@ -6,6 +6,8 @@ import type { Locale } from "@/i18n/config";
 import { LanguageSwitcher, LanguageSwitcherLinks } from "./language-switcher";
 import { SidebarList, SidebarNav, type SidebarGroup } from "./sidebar-nav";
 
+const PIN_KEY = "yg-sidebar-pinned";
+
 type Props = {
   groups: SidebarGroup[];
   homeHref: string;
@@ -30,13 +32,39 @@ export function MobileMenu({ groups, homeHref, locale, labels }: Props) {
     };
   }, [open]);
 
+  // Am Laptop/PC: gemerkten Zustand der Seitenleiste (ausgeklappt) wiederherstellen
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(PIN_KEY) === "1") document.documentElement.dataset.sidebarPinned = "";
+    } catch {
+      /* egal */
+    }
+  }, []);
+
   const close = () => setOpen(false);
 
+  function toggle() {
+    // Große Bildschirme: Seitenleiste fest aus-/einklappen; kleine: Schublade öffnen
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      const html = document.documentElement;
+      const pinned = "sidebarPinned" in html.dataset;
+      if (pinned) delete html.dataset.sidebarPinned;
+      else html.dataset.sidebarPinned = "";
+      try {
+        localStorage.setItem(PIN_KEY, pinned ? "0" : "1");
+      } catch {
+        /* egal */
+      }
+      return;
+    }
+    setOpen((v) => !v);
+  }
+
   return (
-    <div className="lg:hidden">
+    <div>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         aria-expanded={open}
         aria-controls="mobile-nav"
         aria-label={open ? labels.close : labels.open}

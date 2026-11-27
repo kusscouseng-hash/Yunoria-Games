@@ -31,18 +31,20 @@ export function sidebarGroups(locale: Locale, dict: Dictionary): SidebarGroup[] 
   ];
 }
 
-/** Feste Seitenleiste ab Laptop-Breite (auf Handys steckt sie im Menü oben links). */
+/** Seitenleiste ab Laptop-Breite: schmal mit Symbolen, klappt beim Drüberfahren sanft auf; der Menü-Knopf oben links klappt sie fest auf. Auf Handys steckt sie im Menü. */
 export async function Sidebar() {
   const { locale, dict } = await getDictionary();
   const groups = sidebarGroups(locale, dict);
   const home = withLocale(locale, "/");
   return (
-    <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 overflow-y-auto border-r border-border bg-background/60 px-3 py-4 [scrollbar-width:thin] lg:block">
-      <nav aria-label={dict.a11y.mainNav}>
-        <Suspense fallback={<SidebarList groups={groups} homeHref={home} />}>
-          <SidebarNav groups={groups} homeHref={home} />
-        </Suspense>
-      </nav>
+    <aside className="side-rail hidden shrink-0 lg:block">
+      <div className="side-panel fixed bottom-0 left-0 top-14 z-30 overflow-y-auto overflow-x-hidden border-r border-border bg-background px-2 py-4 [scrollbar-width:thin]">
+        <nav aria-label={dict.a11y.mainNav}>
+          <Suspense fallback={<SidebarList groups={groups} homeHref={home} rail />}>
+            <SidebarNav groups={groups} homeHref={home} rail />
+          </Suspense>
+        </nav>
+      </div>
     </aside>
   );
 }

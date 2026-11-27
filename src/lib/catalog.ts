@@ -1,7 +1,7 @@
 import "server-only";
 import { withLocale, type Locale } from "@/i18n/config";
 import { getArcadeCatalog, gamepixSid, type ArcadeGame } from "@/lib/arcade/gamepix";
-import { GAMES, type GameInfo, type GameSlug } from "@/lib/games/registry";
+import { OWN_GAMES_ENABLED, VISIBLE_GAMES, type GameInfo, type GameSlug } from "@/lib/games/registry";
 
 /**
  * Ein gemeinsamer Spielekatalog für die ganze Seite: eigene Spiele („Originals“)
@@ -11,8 +11,9 @@ export const SITE_CATEGORIES = ["action", "puzzle", "racing", "sports", "brain",
 export type SiteCategory = (typeof SITE_CATEGORIES)[number];
 
 /** Sammlungen in der Seitenleiste neben den Kategorien */
-export const COLLECTIONS = ["new", "popular", "originals"] as const;
-export type Collection = (typeof COLLECTIONS)[number];
+const ALL_COLLECTIONS = ["new", "popular", "originals"] as const;
+export type Collection = (typeof ALL_COLLECTIONS)[number];
+export const COLLECTIONS: readonly Collection[] = OWN_GAMES_ENABLED ? ALL_COLLECTIONS : ALL_COLLECTIONS.filter((c) => c !== "originals");
 
 export const CATEGORY_ICON: Record<SiteCategory | Collection, string> = {
   new: "✨",
@@ -112,7 +113,7 @@ export function isCollection(v: string): v is Collection {
 }
 
 export function ownTiles(locale: Locale): Tile[] {
-  return GAMES.map((g) => ({
+  return VISIBLE_GAMES.map((g) => ({
     kind: "own" as const,
     key: `own:${g.slug}`,
     href: withLocale(locale, `/play/${g.slug}`),

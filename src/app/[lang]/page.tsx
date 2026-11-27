@@ -9,7 +9,7 @@ import { withLocale, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentUser } from "@/lib/auth/session";
-import { CATEGORY_ICON, SITE_CATEGORIES, allTiles, byCategory, newest } from "@/lib/catalog";
+import { CATEGORY_ICON, CATEGORY_TINT, SITE_CATEGORIES, allTiles, byCategory, newest } from "@/lib/catalog";
 import { GAME_RANK_SYSTEMS, gameRankForLevel } from "@/lib/game-ranks";
 import { getGuildBoard } from "@/lib/guilds/queries";
 import { levelFromXp } from "@/lib/levels";
@@ -21,35 +21,48 @@ export default async function HomePage() {
   const { locale, dict } = await getDictionary();
   const b = dict.browse;
   const data = await allTiles(locale);
-  // Mosaik oben: eigene Spiele + die bestbewerteten fremden Spiele
-  const mosaic = [...data.own, ...data.arcade.slice(0, 56)];
-  const row = (n = 14) => (tiles: typeof data.all) => tiles.slice(0, n);
+  const top = data.all.slice(0, 12);
 
   return (
-    <div className="w-full space-y-8 px-4 py-5 sm:px-6">
+    <div className="w-full space-y-9 px-4 py-5 sm:px-6">
+      <h1 className="sr-only">{b.forYou}</h1>
       <Suspense fallback={<div className="h-16 animate-pulse rounded-2xl bg-surface" />}>
         <MyStrip locale={locale} dict={dict} />
       </Suspense>
 
-      <section aria-label={b.forYou}>
-        <h1 className="sr-only">{b.forYou}</h1>
-        <Mosaic tiles={mosaic} originalLabel={b.original} />
-      </section>
+      {/* Abteilungen gleich oben – bunte Knöpfe für jede Kategorie */}
+      <nav aria-label={b.categoriesTitle} className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:flex-wrap sm:px-6">
+        {SITE_CATEGORIES.map((cat) => (
+          <Link
+            key={cat}
+            href={withLocale(locale, `/c/${cat}`)}
+            className="flex shrink-0 items-center gap-2 rounded-2xl border border-border bg-surface py-2 pl-2 pr-4 text-sm font-bold transition-transform hover:-translate-y-0.5 hover:border-border-strong"
+          >
+            <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-xl text-base" style={{ background: CATEGORY_TINT[cat] }}>
+              {CATEGORY_ICON[cat]}
+            </span>
+            {b.categories[cat]}
+          </Link>
+        ))}
+      </nav>
 
       <TileRow
-        title={b.originalsRow}
-        icon={CATEGORY_ICON.originals}
-        href={withLocale(locale, "/c/originals")}
+        size="lg"
+        title={b.popularRow}
+        icon={CATEGORY_ICON.popular}
+        tint={CATEGORY_TINT.popular}
+        href={withLocale(locale, "/c/popular")}
         showAll={b.showAll}
-        tiles={data.own}
+        tiles={top}
         originalLabel={b.original}
       />
       <TileRow
         title={b.newRow}
         icon={CATEGORY_ICON.new}
+        tint={CATEGORY_TINT.new}
         href={withLocale(locale, "/c/new")}
         showAll={b.showAll}
-        tiles={row()(newest(data.all))}
+        tiles={newest(data.all).slice(0, 16)}
         originalLabel={b.original}
       />
       {SITE_CATEGORIES.map((cat) => (
@@ -57,12 +70,23 @@ export default async function HomePage() {
           key={cat}
           title={b.categories[cat]}
           icon={CATEGORY_ICON[cat]}
+          tint={CATEGORY_TINT[cat]}
           href={withLocale(locale, `/c/${cat}`)}
           showAll={b.showAll}
-          tiles={row()(byCategory(data.all, cat))}
+          tiles={byCategory(data.all, cat).slice(0, 16)}
           originalLabel={b.original}
         />
       ))}
+
+      {data.all.length > 12 && (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2.5 text-xl font-black tracking-tight sm:text-2xl">
+            <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-lg">🎮</span>
+            {b.allRow}
+          </h2>
+          <Mosaic tiles={data.all.slice(12)} originalLabel={b.original} />
+        </section>
+      )}
 
       <section className="grid gap-5 md:grid-cols-2">
         <Suspense fallback={<div className="h-72 animate-pulse rounded-2xl bg-surface" />}>

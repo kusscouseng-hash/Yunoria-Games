@@ -12,7 +12,7 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { cn } from "@/lib/cn";
 import { GAME_RANK_SYSTEMS, gameRankForLevel, isGameRankSystem } from "@/lib/game-ranks";
-import { GAMES } from "@/lib/games/registry";
+import { VISIBLE_GAMES } from "@/lib/games/registry";
 import { guildTagsFor } from "@/lib/guilds/queries";
 import { levelFromXp } from "@/lib/levels";
 import { rankTier } from "@/lib/ranks";
@@ -87,10 +87,11 @@ async function Profile({ locale, dict, params }: { locale: Locale; dict: Diction
 
       <GuildCard guild={guild} locale={locale} dict={dict} />
 
+      {VISIBLE_GAMES.length > 0 && (
       <Card className="p-5">
         <h2 className="text-lg font-bold">{g.yourBests.replace(/^(Your|Deine) /, "")}</h2>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-          {GAMES.map((gm) => (
+          {VISIBLE_GAMES.map((gm) => (
             <li key={gm.slug}>
               <Link href={withLocale(locale, `/play/${gm.slug}`)} className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm hover:border-accent/60">
                 <span className="font-semibold">{gm.title[locale]}</span>
@@ -100,6 +101,7 @@ async function Profile({ locale, dict, params }: { locale: Locale; dict: Diction
           ))}
         </ul>
       </Card>
+      )}
     </div>
   );
 }

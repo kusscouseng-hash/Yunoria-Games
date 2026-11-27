@@ -145,6 +145,7 @@ export const de: Dictionary = {
       fullscreen: "Vollbild",
       exitFullscreen: "Vollbild beenden",
     },
+    allRow: "Alle Spiele",
     categoriesTitle: "Kategorien",
     original: "Original",
     searchPlaceholder: "Spiele suchen",
@@ -468,7 +469,7 @@ export const de: Dictionary = {
     },
   },
   footer: {
-    rightsNote: "„Originals“ sind Eigenentwicklungen von Yunoria Games. Alle weiteren Spiele werden lizenziert von GamePix bereitgestellt.",
+    rightsNote: "Alle Spiele werden lizenziert von GamePix bereitgestellt.",
   },
   home: {
     badge: "Manga · Manhwa · Manhua · Comics",

@@ -89,3 +89,8 @@ export const GAME_OF_THE_WEEK: GameSlug = "stars";
 export function getGame(slug: string): GameInfo | undefined {
   return GAMES.find((g) => g.slug === slug);
 }
+
+/** Eigene Spiele auf der Seite zeigen? (aus – nur GamePix-Spiele; Code und Daten bleiben für später erhalten) */
+export const OWN_GAMES_ENABLED = false;
+/** Die Spiele, die auf der Seite erscheinen */
+export const VISIBLE_GAMES: GameInfo[] = OWN_GAMES_ENABLED ? GAMES : [];

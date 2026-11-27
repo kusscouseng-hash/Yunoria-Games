@@ -204,3 +204,40 @@ html[data-header-hidden] .reader-bar {
   color: #b77cff;
   font-weight: 700;
 }
+
+/* Seitenleiste: schmal (nur Symbole), klappt beim Drüberfahren sanft auf; fest ausgeklappt per Menü-Knopf */
+.side-rail {
+  width: 4.25rem;
+  transition: width 0.25s ease;
+}
+.side-panel {
+  width: 4.25rem;
+  transition: width 0.25s ease, box-shadow 0.25s ease;
+}
+.side-label {
+  opacity: 0;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+.side-panel:hover,
+.side-panel:focus-within {
+  width: 15rem;
+  box-shadow: 12px 0 32px rgb(0 0 0 / 0.45);
+}
+html[data-sidebar-pinned] .side-rail,
+html[data-sidebar-pinned] .side-panel {
+  width: 15rem;
+  box-shadow: none;
+}
+.side-panel:hover .side-label,
+.side-panel:focus-within .side-label,
+html[data-sidebar-pinned] .side-label {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .side-rail,
+  .side-panel,
+  .side-label {
+    transition: none;
+  }
+}

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Avatar } from "@/components/community/avatar";
 import { GameShell } from "@/components/games/game-shell";
 import { GamePageLayout, recommend } from "@/components/tiles/game-page-layout";
@@ -12,7 +12,7 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentUser } from "@/lib/auth/session";
 import { CATEGORY_ICON, allTiles } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
-import { GAMES, getGame, type GameInfo } from "@/lib/games/registry";
+import { GAMES, OWN_GAMES_ENABLED, getGame, type GameInfo } from "@/lib/games/registry";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,6 +33,8 @@ export default async function PlayPage({ params, searchParams }: PageProps<"/[la
   const game = getGame(slug);
   if (!game) notFound();
   const { locale, dict } = await getDictionary();
+  // Eigene Spiele sind ausgeblendet → zur Startseite
+  if (!OWN_GAMES_ENABLED) redirect(withLocale(locale, "/"));
   const t = dict.games;
   const b = dict.browse;
   const data = await allTiles(locale);

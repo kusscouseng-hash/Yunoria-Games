@@ -22,7 +22,7 @@ export async function SiteHeader() {
           locale={locale}
           labels={{ open: dict.a11y.openMenu, close: dict.a11y.closeMenu, nav: dict.a11y.mobileNav, language: dict.a11y.language }}
         />
-        <Link href={withLocale(locale, "/")} aria-label={`${siteConfig.name} – ${dict.a11y.homeLink}`} className="shrink-0 lg:w-56">
+        <Link href={withLocale(locale, "/")} aria-label={`${siteConfig.name} – ${dict.a11y.homeLink}`} className="shrink-0">
           <Logo compact />
         </Link>
 

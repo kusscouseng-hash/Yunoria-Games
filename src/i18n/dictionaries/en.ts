@@ -143,6 +143,7 @@ export const en = {
       fullscreen: "Fullscreen",
       exitFullscreen: "Exit fullscreen",
     },
+    allRow: "All games",
     categoriesTitle: "Categories",
     original: "Original",
     searchPlaceholder: "Search games",
@@ -466,7 +467,7 @@ export const en = {
     },
   },
   footer: {
-    rightsNote: "“Originals” are made by Yunoria Games. All other games are licensed and provided by GamePix.",
+    rightsNote: "All games are licensed and provided by GamePix.",
   },
   home: {
     badge: "Manga · Manhwa · Manhua · Comics",
