@@ -10,17 +10,18 @@ for (const vp of [{ name: "mobile", width: 390, height: 844, isMobile: true, has
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
   for (const lang of ["en", "de"]) {
-    const r = await p.goto(`${BASE}/${lang}`, { waitUntil: "networkidle2" });
+    const r = await p.goto(`${BASE}/${lang}`, { waitUntil: "load" });
     check(r.status() === 200, `${vp.name} /${lang} status 200`);
     const cards = await p.$$eval('a[href*="/play/"]', (a) => new Set(a.map((x) => x.getAttribute("href"))).size);
     check(cards >= 5, `${vp.name} /${lang} shows ${cards} game links`);
   }
   for (const g of ["stars", "merge", "snake", "blocks", "memory"]) {
-    const r = await p.goto(`${BASE}/en/play/${g}`, { waitUntil: "networkidle2" });
+    const r = await p.goto(`${BASE}/en/play/${g}`, { waitUntil: "load" });
     check(r.status() === 200, `${vp.name} play/${g} status 200`);
+    await new Promise((s) => setTimeout(s, 800));
     const btn = await p.$$("button");
     let started = false;
-    for (const x of btn) { if ((await x.evaluate((n) => n.textContent)).trim() === "Play") { await x.click(); started = true; break; } }
+    for (const x of btn) { if ((await x.evaluate((n) => n.textContent)).trim() === "Play" && (await x.boundingBox())) { await x.click(); started = true; break; } }
     check(started, `${vp.name} ${g} start button`);
     await new Promise((s) => setTimeout(s, 900));
     if (g === "merge") for (const k of ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"]) await p.keyboard.press(k);
@@ -33,11 +34,11 @@ for (const vp of [{ name: "mobile", width: 390, height: 844, isMobile: true, has
     if (vp.name === "mobile") await p.screenshot({ path: `/tmp/g-${g}.png` });
   }
   for (const path of ["/en/leaderboard", "/en/leaderboard/guilds", "/en/guilds", "/de/leaderboard"]) {
-    const r = await p.goto(`${BASE}${path}`, { waitUntil: "networkidle2" });
+    const r = await p.goto(`${BASE}${path}`, { waitUntil: "load" });
     check(r.status() === 200, `${vp.name} ${path} status 200`);
   }
   check(errors.length === 0, `${vp.name} no page errors ${errors.slice(0, 3).join(" | ")}`);
-  if (vp.name === "desktop") { await p.goto(`${BASE}/de`, { waitUntil: "networkidle2" }); await p.screenshot({ path: "/tmp/g-home.png", fullPage: true }); }
+  if (vp.name === "desktop") { await p.goto(`${BASE}/de`, { waitUntil: "load" }); await p.screenshot({ path: "/tmp/g-home.png", fullPage: true }); }
   await p.close();
 }
 await b.close();

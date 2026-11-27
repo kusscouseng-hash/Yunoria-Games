@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+
+/** Zoomfaktor der Spielfläche (Lupe auf der Spielseite) – vergrößert das Höchstmaß der Spielfelder. */
+export const BoardScaleContext = createContext(1);
 
 /** Misst die verfügbare Breite eines Containers (für quadratische/feste Spielfelder). */
-export function useBoardSize<T extends HTMLElement>(max: number) {
+export function useBoardSize<T extends HTMLElement>(baseMax: number) {
+  const max = Math.round(baseMax * useContext(BoardScaleContext));
   const ref = useRef<T>(null);
   const [size, setSize] = useState(max);
   useEffect(() => {

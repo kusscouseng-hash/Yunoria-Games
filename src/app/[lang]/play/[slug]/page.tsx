@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/community/avatar";
-import { GameCard } from "@/components/games/game-card";
 import { GameShell } from "@/components/games/game-shell";
+import { GamePageLayout, recommend } from "@/components/tiles/game-page-layout";
+import { TileRow } from "@/components/tiles/tile-grids";
 import { withLocale, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentUser } from "@/lib/auth/session";
+import { CATEGORY_ICON, allTiles } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
 import { GAMES, getGame, type GameInfo } from "@/lib/games/registry";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -32,37 +34,43 @@ export default async function PlayPage({ params, searchParams }: PageProps<"/[la
   if (!game) notFound();
   const { locale, dict } = await getDictionary();
   const t = dict.games;
+  const b = dict.browse;
+  const data = await allTiles(locale);
+  const tile = data.own.find((x) => x.kind === "own" && x.slug === game.slug)!;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-      <div className="mb-4">
-        <h1 className="text-3xl font-black tracking-tight">{game.title[locale]}</h1>
-        <p className="mt-1 text-sm text-muted">{game.tagline[locale]}</p>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <GamePageLayout
+      tile={tile}
+      subtitle={`${b.categories[tile.category]} · ${b.original} · ${t.xpPerRound}`}
+      player={
         <Suspense fallback={<div className="min-h-[480px] animate-pulse rounded-3xl" style={{ background: game.color }} />}>
           <Shell game={game} locale={locale} dict={dict} />
         </Suspense>
-        <aside className="space-y-5">
-          <div className="rounded-2xl border border-border bg-surface p-5">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-subtle">{t.howToPlay}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">{game.howTo[locale]}</p>
-          </div>
-          <Suspense fallback={<div className="h-80 animate-pulse rounded-2xl bg-surface" />}>
-            <TopScores game={game} locale={locale} dict={dict} searchParams={searchParams} />
-          </Suspense>
-        </aside>
+      }
+      recommended={recommend(tile, data.all)}
+      recommendedTitle={b.recommended}
+      originalLabel={b.original}
+      stageLabels={b.stage}
+    >
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="rounded-2xl border border-border bg-surface p-5">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-subtle">{t.howToPlay}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{game.tagline[locale]}</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{game.howTo[locale]}</p>
+        </section>
+        <Suspense fallback={<div className="h-80 animate-pulse rounded-2xl bg-surface" />}>
+          <TopScores game={game} locale={locale} dict={dict} searchParams={searchParams} />
+        </Suspense>
       </div>
-
-      <section className="mt-10">
-        <h2 className="mb-4 text-xl font-black">{t.allGames}</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {GAMES.filter((g) => g.slug !== game.slug).map((g) => (
-            <GameCard key={g.slug} game={g} locale={locale} dict={dict} />
-          ))}
-        </div>
-      </section>
-    </div>
+      <TileRow
+        title={b.originalsRow}
+        icon={CATEGORY_ICON.originals}
+        href={withLocale(locale, "/c/originals")}
+        showAll={b.showAll}
+        tiles={data.own.filter((x) => x.key !== tile.key)}
+        originalLabel={b.original}
+      />
+    </GamePageLayout>
   );
 }
 

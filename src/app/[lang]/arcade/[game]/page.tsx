@@ -1,33 +1,35 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArcadeCard } from "@/components/arcade/arcade-card";
 import { ArcadePlayer } from "@/components/arcade/arcade-player";
+import { GamePageLayout, recommend } from "@/components/tiles/game-page-layout";
+import { TileRow } from "@/components/tiles/tile-grids";
 import { withLocale, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentUser } from "@/lib/auth/session";
-import { embedUrl, getArcadeCatalog, gamepixSid, type ArcadeGame } from "@/lib/arcade/gamepix";
+import { embedUrl, gamepixSid, type ArcadeGame } from "@/lib/arcade/gamepix";
+import { CATEGORY_ICON, allTiles, byCategory } from "@/lib/catalog";
 
-async function findGame(namespace: string) {
+async function findGame(locale: Locale, namespace: string) {
   const sid = gamepixSid();
   if (!sid) return null;
-  const games = await getArcadeCatalog(sid);
-  const game = games.find((g) => g.namespace === namespace);
-  return game ? { sid, game, games } : null;
+  const data = await allTiles(locale);
+  const tile = data.arcade.find((t) => t.kind === "arcade" && t.game.namespace === namespace);
+  return tile && tile.kind === "arcade" ? { sid, tile, data } : null;
 }
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/arcade/[game]">): Promise<Metadata> {
   const { game } = await params;
-  const found = await findGame(game);
+  const { locale } = await getDictionary();
+  const found = await findGame(locale, game);
   if (!found) return {};
-  return { title: found.game.title, description: found.game.description || undefined };
+  return { title: found.tile.title, description: found.tile.description || undefined };
 }
 
 export default function ArcadeGamePage({ params }: PageProps<"/[lang]/arcade/[game]">) {
   return (
-    <Suspense fallback={<div className="mx-auto mt-6 aspect-[4/3] max-h-[80vh] w-full max-w-6xl animate-pulse rounded-3xl bg-surface" />}>
+    <Suspense fallback={<div className="m-4 aspect-[4/3] max-h-[75vh] animate-pulse rounded-3xl bg-surface" />}>
       <GameBody params={params} />
     </Suspense>
   );
@@ -35,39 +37,40 @@ export default function ArcadeGamePage({ params }: PageProps<"/[lang]/arcade/[ga
 
 async function GameBody({ params }: { params: PageProps<"/[lang]/arcade/[game]">["params"] }) {
   const { game: namespace } = await params;
-  const found = await findGame(namespace);
-  if (!found) notFound();
-  const { sid, game, games } = found;
   const { locale, dict } = await getDictionary();
+  const found = await findGame(locale, namespace);
+  if (!found) notFound();
+  const { sid, tile, data } = found;
+  const b = dict.browse;
   const t = dict.arcade;
-  const label = (c: string) => (t.categories as Record<string, string>)[c] ?? c;
-  const more = games.filter((g) => g.category === game.category && g.namespace !== game.namespace).slice(0, 10);
+  const catLabel = b.categories[tile.category];
+  const more = byCategory(data.all, tile.category).filter((x) => x.key !== tile.key).slice(12, 30);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-      <Link href={withLocale(locale, "/arcade")} className="text-sm font-semibold text-muted hover:text-foreground">
-        ← {t.back}
-      </Link>
-      <h1 className="mt-2 text-3xl font-black tracking-tight">{game.title}</h1>
-      <p className="mb-4 mt-1 text-sm text-subtle">{label(game.category)} · {t.provider}</p>
-
-      <Suspense fallback={<div className="mx-auto aspect-[4/3] max-h-[80vh] animate-pulse rounded-3xl bg-surface" />}>
-        <Player game={game} sid={sid} locale={locale} dict={dict} />
-      </Suspense>
-
-      {game.description && <p className="mt-6 max-w-3xl text-sm leading-relaxed text-muted">{game.description}</p>}
-
-      {more.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-4 text-xl font-black">{label(game.category)}</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {more.map((g) => (
-              <ArcadeCard key={g.namespace} game={g} locale={locale} categoryLabel={label(g.category)} />
-            ))}
-          </div>
+    <GamePageLayout
+      tile={tile}
+      subtitle={`${catLabel} · ${t.provider}`}
+      player={<Player game={tile.game} sid={sid} locale={locale} dict={dict} />}
+      recommended={recommend(tile, data.all)}
+      recommendedTitle={b.recommended}
+      originalLabel={b.original}
+      stageLabels={b.stage}
+    >
+      {tile.description && (
+        <section className="max-w-3xl rounded-2xl border border-border bg-surface p-5">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-subtle">{b.about}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{tile.description}</p>
         </section>
       )}
-    </div>
+      <TileRow
+        title={b.moreLikeThis}
+        icon={CATEGORY_ICON[tile.category]}
+        href={withLocale(locale, `/c/${tile.category}`)}
+        showAll={b.showAll}
+        tiles={more}
+        originalLabel={b.original}
+      />
+    </GamePageLayout>
   );
 }
 
@@ -93,7 +96,6 @@ async function Player({ game, sid, locale, dict }: { game: ArcadeGame; sid: stri
         capReached: t.capReached,
         signInForXp: t.signInForXp,
         signIn: t.signIn,
-        fullscreen: t.fullscreen,
       }}
     />
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { claimArcadeMinute } from "@/lib/arcade/actions";
 
@@ -25,7 +25,6 @@ type Texts = {
   capReached: string;
   signInForXp: string;
   signIn: string;
-  fullscreen: string;
 };
 
 /**
@@ -55,7 +54,6 @@ export function ArcadePlayer({
   const remembered = useSyncExternalStore(noSubscribe, storedConsent, () => false);
   const loaded = accepted || remembered;
   const [status, setStatus] = useState<string | null>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
 
   // Spielzeit zählen: alle 5 s prüfen, nach 60 aktiven Sekunden eine Minute melden
   useEffect(() => {
@@ -94,18 +92,13 @@ export function ArcadePlayer({
     setAccepted(true);
   }
 
-  function fullscreen() {
-    wrapRef.current?.requestFullscreen?.().catch(() => {});
-  }
-
   const ratio = `${Math.max(width, 1)} / ${Math.max(height, 1)}`;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div
-        ref={wrapRef}
         className="relative mx-auto w-full overflow-hidden rounded-3xl border border-border bg-black"
-        style={{ aspectRatio: ratio, maxHeight: "80vh", maxWidth: `calc(80vh * ${Math.max(width, 1) / Math.max(height, 1)})` }}
+        style={{ aspectRatio: ratio, maxHeight: "var(--stage-h, 72vh)", maxWidth: `calc(var(--stage-h, 72vh) * ${Math.max(width, 1) / Math.max(height, 1)})` }}
       >
         {loaded ? (
           <iframe
@@ -148,11 +141,6 @@ export function ArcadePlayer({
             </>
           )}
         </span>
-        {loaded && (
-          <button type="button" onClick={fullscreen} className="rounded-full bg-surface-2 px-3 py-1.5 text-xs font-semibold hover:text-accent-hover">
-            {t.fullscreen}
-          </button>
-        )}
       </div>
     </div>
   );

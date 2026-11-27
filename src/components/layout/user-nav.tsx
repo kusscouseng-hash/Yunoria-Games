@@ -4,6 +4,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { withLocale, type Locale } from "@/i18n/config";
 import { getCurrentUser } from "@/lib/auth/session";
 import { Avatar } from "@/components/community/avatar";
+import { levelFromXp } from "@/lib/levels";
 
 type Props = { locale: Locale; loginLabel: string; accountLabel: string };
 
@@ -37,6 +38,7 @@ export async function UserNav({ locale, loginLabel, accountLabel }: Props) {
         </span>
       )}
       <span className="hidden max-w-32 truncate sm:inline">{user.username}</span>
+      <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-black text-accent-hover">Lv. {levelFromXp(user.gameXp).level}</span>
     </Link>
     </div>
   );

@@ -11,7 +11,6 @@ export const siteConfig = {
   /** Hauptnavigation: Pfad ohne Sprachpräfix + Schlüssel im Wörterbuch (dict.nav) */
   nav: [
     { href: "/", key: "home" },
-    { href: "/arcade", key: "arcade" },
     { href: "/leaderboard", key: "leaderboard" },
     { href: "/guilds", key: "guilds" },
   ],

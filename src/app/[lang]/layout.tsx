@@ -5,6 +5,7 @@ import { locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { Sidebar } from "@/components/layout/sidebar";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -35,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#09090b",
+  themeColor: "#14183d",
   colorScheme: "dark",
 };
 
@@ -51,10 +52,15 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
           {dict.a11y.skipToContent}
         </a>
         <SiteHeader />
-        <main id="content" className="flex flex-1 flex-col">
-          {children}
-        </main>
-        <SiteFooter />
+        <div className="flex flex-1">
+          <Sidebar />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <main id="content" className="flex flex-1 flex-col">
+              {children}
+            </main>
+            <SiteFooter />
+          </div>
+        </div>
       </body>
     </html>
   );

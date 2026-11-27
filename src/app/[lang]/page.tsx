@@ -1,19 +1,16 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/community/avatar";
-import { ArcadeCard } from "@/components/arcade/arcade-card";
-import { GameArt } from "@/components/games/game-art";
-import { GameCard } from "@/components/games/game-card";
 import { GuildEmblem } from "@/components/guilds/guild-tag";
+import { Mosaic, TileRow } from "@/components/tiles/tile-grids";
 import { ButtonLink } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { withLocale, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getArcadeCatalog, gamepixSid } from "@/lib/arcade/gamepix";
+import { CATEGORY_ICON, SITE_CATEGORIES, allTiles, byCategory, newest } from "@/lib/catalog";
 import { GAME_RANK_SYSTEMS, gameRankForLevel } from "@/lib/game-ranks";
-import { GAMES, GAME_OF_THE_WEEK, getGame } from "@/lib/games/registry";
 import { getGuildBoard } from "@/lib/guilds/queries";
 import { levelFromXp } from "@/lib/levels";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -22,45 +19,50 @@ import type { GuildColor } from "@/lib/supabase/database.types";
 
 export default async function HomePage() {
   const { locale, dict } = await getDictionary();
-  const t = dict.games;
-  const featured = getGame(GAME_OF_THE_WEEK)!;
+  const b = dict.browse;
+  const data = await allTiles(locale);
+  // Mosaik oben: eigene Spiele + die bestbewerteten fremden Spiele
+  const mosaic = [...data.own, ...data.arcade.slice(0, 56)];
+  const row = (n = 14) => (tiles: typeof data.all) => tiles.slice(0, n);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-10 px-4 py-8 sm:px-6">
-      <section className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        {/* Spiel der Woche */}
-        <div className="relative flex min-h-[320px] items-end overflow-hidden rounded-3xl border border-border">
-          <GameArt slug={featured.slug} color={featured.color} accent={featured.accent} className="absolute inset-0 h-full w-full" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-          <div className="relative space-y-3 p-6 sm:p-8">
-            <span className="inline-block rounded-full bg-accent px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white">{t.gameOfTheWeek}</span>
-            <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">{featured.title[locale]}</h1>
-            <p className="max-w-lg text-sm text-white/85 sm:text-base">{featured.tagline[locale]}</p>
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <ButtonLink href={withLocale(locale, `/play/${featured.slug}`)} size="lg">
-                {t.playNow}
-              </ButtonLink>
-              <span className="text-sm font-bold text-amber-200">{t.xpPerRound}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Eigenes Level oder Einladung */}
-        <Suspense fallback={<div className="min-h-[320px] animate-pulse rounded-3xl bg-surface" />}>
-          <MyPanel locale={locale} dict={dict} />
-        </Suspense>
-      </section>
-
-      <section>
-        <h2 className="mb-4 text-2xl font-black tracking-tight">{t.allGames}</h2>
-        <Suspense fallback={<GameGrid locale={locale} dict={dict} best={{}} />}>
-          <GamesWithBests locale={locale} dict={dict} />
-        </Suspense>
-      </section>
-
-      <Suspense fallback={null}>
-        <MoreGames locale={locale} dict={dict} />
+    <div className="w-full space-y-8 px-4 py-5 sm:px-6">
+      <Suspense fallback={<div className="h-16 animate-pulse rounded-2xl bg-surface" />}>
+        <MyStrip locale={locale} dict={dict} />
       </Suspense>
+
+      <section aria-label={b.forYou}>
+        <h1 className="sr-only">{b.forYou}</h1>
+        <Mosaic tiles={mosaic} originalLabel={b.original} />
+      </section>
+
+      <TileRow
+        title={b.originalsRow}
+        icon={CATEGORY_ICON.originals}
+        href={withLocale(locale, "/c/originals")}
+        showAll={b.showAll}
+        tiles={data.own}
+        originalLabel={b.original}
+      />
+      <TileRow
+        title={b.newRow}
+        icon={CATEGORY_ICON.new}
+        href={withLocale(locale, "/c/new")}
+        showAll={b.showAll}
+        tiles={row()(newest(data.all))}
+        originalLabel={b.original}
+      />
+      {SITE_CATEGORIES.map((cat) => (
+        <TileRow
+          key={cat}
+          title={b.categories[cat]}
+          icon={CATEGORY_ICON[cat]}
+          href={withLocale(locale, `/c/${cat}`)}
+          showAll={b.showAll}
+          tiles={row()(byCategory(data.all, cat))}
+          originalLabel={b.original}
+        />
+      ))}
 
       <section className="grid gap-5 md:grid-cols-2">
         <Suspense fallback={<div className="h-72 animate-pulse rounded-2xl bg-surface" />}>
@@ -74,42 +76,20 @@ export default async function HomePage() {
   );
 }
 
-function GameGrid({ locale, dict, best }: { locale: Locale; dict: Dictionary; best: Record<string, number> }) {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
-      {GAMES.map((g) => (
-        <GameCard key={g.slug} game={g} locale={locale} dict={dict} best={best[g.slug]} />
-      ))}
-    </div>
-  );
-}
-
-async function GamesWithBests({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const user = await getCurrentUser();
-  let best: Record<string, number> = {};
-  if (user) {
-    const supabase = await createClient();
-    const { data } = await supabase.from("game_best_scores").select("game, score").eq("user_id", user.id);
-    best = Object.fromEntries((data ?? []).map((r) => [r.game, r.score]));
-  }
-  return <GameGrid locale={locale} dict={dict} best={best} />;
-}
-
-async function MyPanel({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+/** Schmale Leiste oben: eigenes Level und Tages-XP – oder Einladung zum Mitmachen. */
+async function MyStrip({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const t = dict.games;
-  const a = dict.auth.account;
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <div className="flex flex-col justify-center gap-4 rounded-3xl border border-border bg-surface p-6">
-        <h2 className="text-2xl font-black leading-tight">{t.heroTitle}</h2>
-        <p className="text-sm text-muted">{t.heroText}</p>
-        <p className="text-xs text-subtle">{t.sameAccount}</p>
-        <div className="flex flex-wrap gap-2">
-          <ButtonLink href={withLocale(locale, "/register")}>{dict.auth.register.submit}</ButtonLink>
-          <ButtonLink href={withLocale(locale, "/login")} variant="secondary">
-            {dict.nav.login}
-          </ButtonLink>
+      <div className="flex flex-col gap-3 rounded-2xl border border-accent/30 bg-gradient-to-r from-accent-soft to-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="font-black">{t.heroTitle}</p>
+          <p className="text-sm text-muted">{t.heroText}</p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <ButtonLink href={withLocale(locale, "/register")} size="sm">{dict.auth.register.submit}</ButtonLink>
+          <ButtonLink href={withLocale(locale, "/login")} size="sm" variant="secondary">{dict.nav.login}</ButtonLink>
         </div>
       </div>
     );
@@ -122,34 +102,31 @@ async function MyPanel({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const today = stats.today_xp ?? 0;
   const cap = stats.daily_cap ?? 200;
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6">
+    <Link
+      href={withLocale(locale, "/account")}
+      className="grid items-center gap-3 rounded-2xl border border-border bg-surface p-3 transition-colors hover:border-border-strong sm:grid-cols-[auto_1fr_1fr] sm:gap-5 sm:p-4"
+    >
       <div className="flex items-center gap-3">
-        <Avatar url={user.avatarUrl} name={user.username} size={52} className="border-2 border-accent/60" />
+        <Avatar url={user.avatarUrl} name={user.username} size={44} className="border-2 border-accent/60" />
         <div className="min-w-0">
-          <p className="truncate text-lg font-bold">{user.username}</p>
+          <p className="truncate font-bold">{user.username}</p>
           <p className="text-xs font-semibold text-accent-hover">
             {GAME_RANK_SYSTEMS[user.gameRankSystem].label} · {rank.current.name}
           </p>
         </div>
       </div>
-      <div className="rounded-2xl bg-surface-2 p-4">
-        <div className="flex items-end justify-between">
-          <span className="text-xs uppercase tracking-wider text-subtle">{t.yourLevel}</span>
-          <span className="text-3xl font-black">{lvl.level}</span>
+      <div>
+        <div className="flex justify-between text-xs text-muted">
+          <span className="font-bold text-foreground">Lv. {lvl.level}</span>
+          <span>{lvl.xpForNext - lvl.xpIntoLevel} XP → Lv. {lvl.level + 1}</span>
         </div>
-        <ProgressBar className="mt-2" value={lvl.xpIntoLevel} max={lvl.xpForNext} label={a.level} />
-        <p className="mt-2 text-xs text-muted">
-          {lvl.xpForNext - lvl.xpIntoLevel} XP → Lv. {lvl.level + 1}
-        </p>
+        <ProgressBar className="mt-1.5" value={lvl.xpIntoLevel} max={lvl.xpForNext} label={dict.auth.account.level} />
       </div>
-      <div className="rounded-2xl bg-surface-2 p-4">
-        <p className="text-xs uppercase tracking-wider text-subtle">{t.todayXp.replace("{today}", String(today)).replace("{cap}", String(cap))}</p>
-        <ProgressBar className="mt-2" value={today} max={cap} label={t.gameXp} />
+      <div>
+        <p className="text-xs text-muted">{t.todayXp.replace("{today}", String(today)).replace("{cap}", String(cap))}</p>
+        <ProgressBar className="mt-1.5" value={today} max={cap} label={t.gameXp} />
       </div>
-      <Link href={withLocale(locale, "/account")} className="text-sm font-semibold text-accent-hover hover:underline">
-        {dict.profile.viewProfile} →
-      </Link>
-    </div>
+    </Link>
   );
 }
 
@@ -212,26 +189,3 @@ async function TopGuilds({ locale, dict }: { locale: Locale; dict: Dictionary })
   );
 }
 
-async function MoreGames({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const sid = gamepixSid();
-  if (!sid) return null;
-  const games = (await getArcadeCatalog(sid)).slice(0, 10);
-  if (games.length === 0) return null;
-  const t = dict.arcade;
-  const label = (c: string) => (t.categories as Record<string, string>)[c] ?? c;
-  return (
-    <section>
-      <div className="mb-4 flex items-end justify-between gap-3">
-        <h2 className="text-2xl font-black tracking-tight">{t.homeTitle}</h2>
-        <Link href={withLocale(locale, "/arcade")} className="text-sm font-semibold text-accent hover:text-accent-hover">
-          {t.showAll} →
-        </Link>
-      </div>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
-        {games.map((g) => (
-          <ArcadeCard key={g.namespace} game={g} locale={locale} categoryLabel={label(g.category)} />
-        ))}
-      </div>
-    </section>
-  );
-}

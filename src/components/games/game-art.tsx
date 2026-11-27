@@ -54,7 +54,7 @@ export function GameArt({ slug, color, accent, className }: { slug: GameSlug; co
       <defs>
         <linearGradient id={`ga-${slug}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor={color} />
-          <stop offset="1" stopColor="#09090b" />
+          <stop offset="1" stopColor="#14183d" />
         </linearGradient>
       </defs>
       <rect width="240" height="150" fill={`url(#ga-${slug})`} />

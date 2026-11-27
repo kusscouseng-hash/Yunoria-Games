@@ -17,6 +17,8 @@ export type ArcadeGame = {
   height: number;
   banner: string;
   icon: string;
+  /** Veröffentlichung bei GamePix (ms) – für „Neu“ */
+  published: number;
 };
 
 /** Familienfreundliche Kategorien – Ballern, Krieg, Zombies, Kämpfe usw. bleiben draußen. */
@@ -74,6 +76,7 @@ type FeedItem = {
   height: number;
   banner_image: string;
   image: string;
+  date_published?: string;
 };
 
 const PAGES = 4; // 4 × 96 = die 384 bestbewerteten Spiele
@@ -103,7 +106,8 @@ export async function getArcadeCatalog(sid: string): Promise<ArcadeGame[]> {
         width: Number(it.width) || 800,
         height: Number(it.height) || 600,
         banner: it.banner_image.replace(/\?w=\d+/, "?w=480"),
-        icon: it.image,
+        icon: String(it.image ?? "").replace(/\?w=\d+/, "?w=400"),
+        published: Date.parse(it.date_published ?? "") || 0,
       });
     }
   }

@@ -2,24 +2,24 @@
 
 /*
  * Designsystem – Farben und Grundwerte
- * Dunkles Theme: Schwarz/Dunkelgrau, rote Akzente für wichtige Elemente.
+ * Freundliches Theme: tiefes Blau, lila Akzent, bunte Lichter (Türkis/Pink) im Hintergrund.
  * Alle Komponenten nutzen nur diese Tokens (z. B. bg-surface, text-muted, bg-accent).
  */
 @theme inline {
-  --color-background: #09090b;
-  --color-surface: #131316;
-  --color-surface-2: #1c1c21;
-  --color-surface-3: #26262c;
-  --color-border: #2c2c33;
-  --color-border-strong: #3d3d46;
+  --color-background: #14183d;
+  --color-surface: #1d2254;
+  --color-surface-2: #282e6b;
+  --color-surface-3: #343b82;
+  --color-border: #343c7f;
+  --color-border-strong: #4a53a3;
 
-  --color-foreground: #f4f4f5;
-  --color-muted: #a1a1aa;
-  --color-subtle: #71717a;
+  --color-foreground: #f6f7ff;
+  --color-muted: #b9bfe8;
+  --color-subtle: #8c93c9;
 
-  --color-accent: #e11d2e;
-  --color-accent-hover: #f43f4e;
-  --color-accent-soft: rgb(225 29 46 / 0.14);
+  --color-accent: #7b5cff;
+  --color-accent-hover: #9d85ff;
+  --color-accent-soft: rgb(123 92 255 / 0.2);
   --color-accent-foreground: #ffffff;
 
   --color-success: #22c55e;
@@ -41,7 +41,7 @@ body {
 }
 
 html {
-  background: var(--color-background);
+  background: radial-gradient(120% 80% at 50% -10%, #2a2f7a 0%, var(--color-background) 55%) fixed, var(--color-background);
 }
 
 body {
@@ -70,7 +70,7 @@ body::before {
   height: 55vw;
   left: -15vw;
   top: -20vw;
-  background: radial-gradient(circle, rgb(225 29 46 / 0.2), rgb(225 29 46 / 0.08) 35%, transparent 70%);
+  background: radial-gradient(circle, rgb(34 211 238 / 0.22), rgb(34 211 238 / 0.08) 35%, transparent 70%);
   animation: glow-a 26s ease-in-out infinite alternate;
 }
 
@@ -79,7 +79,7 @@ body::after {
   height: 50vw;
   right: -15vw;
   bottom: -20vw;
-  background: radial-gradient(circle, rgb(168 85 247 / 0.14), rgb(225 29 46 / 0.08) 40%, transparent 65%);
+  background: radial-gradient(circle, rgb(244 114 182 / 0.2), rgb(168 85 247 / 0.1) 40%, transparent 65%);
   animation: glow-b 32s ease-in-out infinite alternate;
 }
 
