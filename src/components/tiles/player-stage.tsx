@@ -23,6 +23,8 @@ type Labels = { zoomIn: string; zoomOut: string; fullscreen: string; exitFullscr
 export function PlayerStage({ children, header, labels }: { children: ReactNode; header: ReactNode; labels: Labels }) {
   const [level, setLevel] = useState(DEFAULT);
   const [fs, setFs] = useState(false);
+  // Ersatz-Vollbild (z. B. iPhone, wo Seiten kein echtes Vollbild anfordern dürfen)
+  const [pseudo, setPseudo] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
 
   // Gespeicherte Zoomstufe nach dem Laden übernehmen
@@ -45,6 +47,20 @@ export function PlayerStage({ children, header, labels }: { children: ReactNode;
     return () => document.removeEventListener("fullscreenchange", on);
   }, []);
 
+  // Ersatz-Vollbild: Seite nicht scrollen, mit Escape schließen
+  useEffect(() => {
+    if (!pseudo) return;
+    const html = document.documentElement;
+    const prev = html.style.overflow;
+    html.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPseudo(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      html.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [pseudo]);
+
   function change(delta: number) {
     setLevel((l) => {
       const next = Math.min(LEVELS.length - 1, Math.max(0, l + delta));
@@ -58,13 +74,20 @@ export function PlayerStage({ children, header, labels }: { children: ReactNode;
   }
 
   function toggleFullscreen() {
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    else stageRef.current?.requestFullscreen?.().catch(() => {});
+    if (pseudo) return setPseudo(false);
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+      return;
+    }
+    const el = stageRef.current;
+    if (!el?.requestFullscreen) return setPseudo(true);
+    el.requestFullscreen({ navigationUI: "hide" }).catch(() => setPseudo(true));
   }
 
   const lv = LEVELS[level];
-  // Im Vollbild: volle Höhe und größtes Spielfeld
-  const style = { "--stage-h": fs ? "calc(100vh - 2rem)" : lv.h } as CSSProperties;
+  const full = fs || pseudo;
+  // Im Vollbild: ganzer Bildschirm und größtes Spielfeld
+  const style = { "--stage-h": full ? "100dvh" : lv.h } as CSSProperties;
   const btn =
     "flex h-9 min-w-9 items-center justify-center rounded-xl bg-surface-2 px-2.5 text-sm font-bold transition-colors hover:bg-surface-3 disabled:opacity-40";
 
@@ -73,11 +96,28 @@ export function PlayerStage({ children, header, labels }: { children: ReactNode;
       <div
         ref={stageRef}
         style={style}
-        className={cn("transition-[max-width] duration-300", fs && "flex items-center justify-center overflow-auto bg-background p-4")}
+        data-fs={full ? "" : undefined}
+        className={cn(
+          "relative",
+          full && "flex h-dvh w-screen items-center justify-center overflow-auto bg-black",
+          pseudo && "fixed inset-0 z-[100]",
+        )}
       >
         <div className="w-full">
-          <BoardScaleContext.Provider value={fs ? 2 : lv.scale}>{children}</BoardScaleContext.Provider>
+          <BoardScaleContext.Provider value={full ? 2 : lv.scale}>{children}</BoardScaleContext.Provider>
         </div>
+        {full && (
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-3.5 py-2 text-sm font-bold text-white shadow-lg ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-black/90"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+            {labels.exitFullscreen}
+          </button>
+        )}
       </div>
       <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3">
         <div className="min-w-0 flex-1">{header}</div>
@@ -104,7 +144,7 @@ export function PlayerStage({ children, header, labels }: { children: ReactNode;
               <path d="m20 20-3.5-3.5M8 11h6M11 8v6" />
             </svg>
           </button>
-          <button type="button" onClick={toggleFullscreen} aria-label={fs ? labels.exitFullscreen : labels.fullscreen} title={labels.fullscreen} className={cn(btn, "bg-accent text-white hover:bg-accent-hover")}>
+          <button type="button" onClick={toggleFullscreen} aria-label={full ? labels.exitFullscreen : labels.fullscreen} title={labels.fullscreen} className={cn(btn, "bg-accent text-white hover:bg-accent-hover")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
             </svg>

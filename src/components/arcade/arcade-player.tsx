@@ -97,7 +97,7 @@ export function ArcadePlayer({
   return (
     <div className="space-y-2">
       <div
-        className="relative mx-auto w-full overflow-hidden rounded-3xl border border-border bg-black"
+        className="arcade-frame relative mx-auto w-full overflow-hidden rounded-3xl border border-border bg-black"
         style={{ aspectRatio: ratio, maxHeight: "var(--stage-h, 72vh)", maxWidth: `calc(var(--stage-h, 72vh) * ${Math.max(width, 1) / Math.max(height, 1)})` }}
       >
         {loaded ? (
@@ -128,7 +128,7 @@ export function ArcadePlayer({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+      <div className="arcade-meta flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="text-muted">
           {signedIn ? (
             (status ?? t.xpInfo)

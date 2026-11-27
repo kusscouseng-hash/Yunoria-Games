@@ -205,7 +205,7 @@ html[data-header-hidden] .reader-bar {
   font-weight: 700;
 }
 
-/* Seitenleiste: schmal (nur Symbole), klappt beim Drüberfahren sanft auf; fest ausgeklappt per Menü-Knopf */
+/* Seitenleiste: schmal (nur Symbole), klappt beim Drüberfahren sanft auf; per Menü-Knopf ganz ausblendbar */
 .side-rail {
   width: 4.25rem;
   transition: width 0.25s ease;
@@ -224,14 +224,12 @@ html[data-header-hidden] .reader-bar {
   width: 15rem;
   box-shadow: 12px 0 32px rgb(0 0 0 / 0.45);
 }
-html[data-sidebar-pinned] .side-rail,
-html[data-sidebar-pinned] .side-panel {
-  width: 15rem;
-  box-shadow: none;
+/* Menü-Knopf oben links: Seitenleiste komplett ausblenden */
+html[data-sidebar-hidden] .side-rail {
+  display: none;
 }
 .side-panel:hover .side-label,
-.side-panel:focus-within .side-label,
-html[data-sidebar-pinned] .side-label {
+.side-panel:focus-within .side-label {
   opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -240,4 +238,18 @@ html[data-sidebar-pinned] .side-label {
   .side-label {
     transition: none;
   }
+}
+
+/* Vollbild: eingebettetes Spiel füllt den ganzen Bildschirm (ohne Seitenverhältnis-Ränder) */
+[data-fs] .arcade-frame {
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  border: 0;
+  border-radius: 0;
+}
+[data-fs] .arcade-meta {
+  display: none;
 }

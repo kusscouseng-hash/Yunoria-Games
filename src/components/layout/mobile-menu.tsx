@@ -6,7 +6,7 @@ import type { Locale } from "@/i18n/config";
 import { LanguageSwitcher, LanguageSwitcherLinks } from "./language-switcher";
 import { SidebarList, SidebarNav, type SidebarGroup } from "./sidebar-nav";
 
-const PIN_KEY = "yg-sidebar-pinned";
+const HIDE_KEY = "yg-sidebar-hidden";
 
 type Props = {
   groups: SidebarGroup[];
@@ -32,10 +32,10 @@ export function MobileMenu({ groups, homeHref, locale, labels }: Props) {
     };
   }, [open]);
 
-  // Am Laptop/PC: gemerkten Zustand der Seitenleiste (ausgeklappt) wiederherstellen
+  // Am Laptop/PC: gemerkten Zustand der Seitenleiste (ganz ausgeblendet) wiederherstellen
   useEffect(() => {
     try {
-      if (localStorage.getItem(PIN_KEY) === "1") document.documentElement.dataset.sidebarPinned = "";
+      if (localStorage.getItem(HIDE_KEY) === "1") document.documentElement.dataset.sidebarHidden = "";
     } catch {
       /* egal */
     }
@@ -44,14 +44,14 @@ export function MobileMenu({ groups, homeHref, locale, labels }: Props) {
   const close = () => setOpen(false);
 
   function toggle() {
-    // Große Bildschirme: Seitenleiste fest aus-/einklappen; kleine: Schublade öffnen
+    // Große Bildschirme: Seitenleiste ganz weg / wieder da; kleine: Schublade öffnen
     if (window.matchMedia("(min-width: 1024px)").matches) {
       const html = document.documentElement;
-      const pinned = "sidebarPinned" in html.dataset;
-      if (pinned) delete html.dataset.sidebarPinned;
-      else html.dataset.sidebarPinned = "";
+      const hidden = "sidebarHidden" in html.dataset;
+      if (hidden) delete html.dataset.sidebarHidden;
+      else html.dataset.sidebarHidden = "";
       try {
-        localStorage.setItem(PIN_KEY, pinned ? "0" : "1");
+        localStorage.setItem(HIDE_KEY, hidden ? "0" : "1");
       } catch {
         /* egal */
       }

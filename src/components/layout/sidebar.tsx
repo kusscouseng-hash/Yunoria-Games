@@ -31,7 +31,7 @@ export function sidebarGroups(locale: Locale, dict: Dictionary): SidebarGroup[] 
   ];
 }
 
-/** Seitenleiste ab Laptop-Breite: schmal mit Symbolen, klappt beim Drüberfahren sanft auf; der Menü-Knopf oben links klappt sie fest auf. Auf Handys steckt sie im Menü. */
+/** Seitenleiste ab Laptop-Breite: schmal mit Symbolen, klappt beim Drüberfahren sanft auf; der Menü-Knopf oben links blendet sie ganz aus/ein. Auf Handys steckt sie im Menü. */
 export async function Sidebar() {
   const { locale, dict } = await getDictionary();
   const groups = sidebarGroups(locale, dict);
