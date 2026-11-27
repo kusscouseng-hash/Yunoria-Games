@@ -29,7 +29,7 @@ Kostenlose Browser-Spiele mit Leveln, Rängen, Gilden und Wochen-Ranglisten – 
 - **Handverlesene Auswahl:** Unter `/de/admin/arcade` (nur Admins, Controller-Symbol oben rechts) Spiele durchsehen,
   testen und mit „Aufnehmen“ auswählen. Sobald mindestens ein Spiel ausgewählt ist, zeigt die Seite nur noch die Auswahl.
   Solange die Auswahl leer ist, wie bisher die bestbewerteten GamePix-Spiele. Migration: `20261127220000_arcade_picks.sql`.
-- Nur familienfreundliche Kategorien, zusätzlich Wortfilter (`src/lib/arcade/`).
+- Kein Familienfilter: nur Glücksspiel (Casino, Poker, Slots …) bleibt draußen (`BLOCKED_WORDS` in `src/lib/arcade/types.ts`). Ausgesucht wird von Hand im Admin-Bereich.
 - Spiel lädt erst nach Klick (Datenschutz). Spielzeit-Bonus: 4 XP pro aktiver Minute, max. 200 XP/Tag (Migrationen `20261124200000_arcade_playtime.sql`, `20261127230000_arcade_bonus_up.sql`).
 
 ## Tests

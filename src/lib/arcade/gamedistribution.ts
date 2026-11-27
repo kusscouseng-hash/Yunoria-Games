@@ -1,6 +1,6 @@
 import "server-only";
 import { cacheLife } from "next/cache";
-import { BLOCKED_WORDS, type ArcadeCategory, type ArcadeGame } from "./types";
+import { BLOCKED_WORDS, guessCategory, type ArcadeCategory, type ArcadeGame } from "./types";
 
 /**
  * Spiele von GameDistribution (lizenzierter Spiele-Vertrieb von Azerion; Werbung läuft über
@@ -13,7 +13,7 @@ export function gameDistributionEnabled(): boolean {
   return process.env.GAMEDISTRIBUTION_ENABLED?.trim().toLowerCase() !== "false";
 }
 
-/** GameDistribution-Kategorie → unsere Kategorie. Nicht aufgeführte (Shooter, Battle, .IO …) bleiben draußen. */
+/** GameDistribution-Kategorie → unsere Kategorie. Unbekannte werden über guessCategory() zugeordnet. */
 const TO_SITE: Record<string, ArcadeCategory> = {
   Casual: "casual",
   Clicker: "casual",
@@ -35,6 +35,9 @@ const TO_SITE: Record<string, ArcadeCategory> = {
   Educational: "brain",
   Cards: "brain",
   Agility: "action",
+  Shooter: "action",
+  Battle: "action",
+  ".IO": "action",
   Arcade: "action",
   Jumping: "action",
   "Dress-up": "creative",
@@ -44,8 +47,8 @@ const TO_SITE: Record<string, ArcadeCategory> = {
   Adventure: "strategy",
 };
 
-/** Schlagwörter, bei denen ein Spiel trotz passender Kategorie draußen bleibt */
-const BLOCKED_TAGS = /^(war|army|gun|guns|shooting|shooter|sniper|zombie|zombies|horror|blood|battle|fighting|fight|knife|casino|gambling|kissing|dating|killing|kill)$/i;
+/** Schlagwörter, bei denen ein Spiel draußen bleibt (nur Glücksspiel) */
+const BLOCKED_TAGS = /^(casino|gambling|slots?|poker|roulette|blackjack|betting)$/i;
 
 type FeedItem = {
   Title?: string;
@@ -97,8 +100,7 @@ export async function getGameDistributionCatalog(): Promise<ArcadeGame[]> {
       rank++;
       const md5 = String(it?.Md5 ?? "");
       if (!/^[0-9a-f]{32}$/.test(md5) || seen.has(md5) || it.Type !== "html5") continue;
-      const cat = (it.Category ?? []).map((c) => TO_SITE[c]).find(Boolean);
-      if (!cat) continue;
+      const cat = (it.Category ?? []).map((c) => TO_SITE[c]).find(Boolean) ?? guessCategory(`${(it.Category ?? []).join(" ")} ${it.Title ?? ""}`);
       const title = String(it.Title ?? "").trim();
       const description = String(it.Description ?? "").trim();
       if (!title || BLOCKED_WORDS.test(`${title} ${description}`)) continue;

@@ -1,6 +1,6 @@
 import "server-only";
 import { cacheLife } from "next/cache";
-import { BLOCKED_WORDS, type ArcadeCategory, type ArcadeGame } from "./types";
+import { BLOCKED_WORDS, guessCategory, type ArcadeCategory, type ArcadeGame } from "./types";
 
 /**
  * Spiele von GamePix (lizenzierter Spiele-Vertrieb, Werbung läuft über GamePix
@@ -8,7 +8,7 @@ import { BLOCKED_WORDS, type ArcadeCategory, type ArcadeGame } from "./types";
  * Doku: https://docs.gamepix.com/docs
  */
 
-/** Familienfreundliche Kategorien – Ballern, Krieg, Zombies, Kämpfe usw. bleiben draußen. */
+/** Bekannte GamePix-Kategorien; alle anderen werden über guessCategory() zugeordnet. */
 export const ARCADE_CATEGORIES = [
   "puzzle",
   "match-3",
@@ -104,7 +104,7 @@ export async function getArcadeCatalog(sid: string): Promise<ArcadeGame[]> {
     if (!res.ok) break;
     const data = (await res.json()) as { items?: FeedItem[] };
     for (const it of data.items ?? []) {
-      if (!it?.namespace || seen.has(it.namespace) || !isGamepixCategory(it.category)) continue;
+      if (!it?.namespace || seen.has(it.namespace) || !it.category) continue;
       if (BLOCKED_WORDS.test(`${it.title} ${it.description ?? ""}`)) continue;
       if (!/^[a-z0-9-]+$/.test(it.namespace) || it.namespace.startsWith("gd-") || !it.banner_image?.startsWith("https://img.gamepix.com/")) continue;
       seen.add(it.namespace);
@@ -115,7 +115,7 @@ export async function getArcadeCatalog(sid: string): Promise<ArcadeGame[]> {
         id: it.namespace,
         title: String(it.title).slice(0, 80),
         description: String(it.description ?? "").slice(0, 400),
-        category: TO_SITE[it.category],
+        category: isGamepixCategory(it.category) ? TO_SITE[it.category] : guessCategory(`${it.category} ${it.title}`),
         width: Number(it.width) || 800,
         height: Number(it.height) || 600,
         banner,

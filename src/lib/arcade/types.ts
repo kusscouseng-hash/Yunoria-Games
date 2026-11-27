@@ -44,6 +44,17 @@ export const PROVIDERS: Record<ArcadeSource, { name: string; privacyUrl: string;
   },
 };
 
-/** Titel/Beschreibungen mit diesen Wörtern bleiben draußen (familienfreundlich). */
-export const BLOCKED_WORDS =
-  /\b(gun|guns|sniper|shoot\w*|shooter|kill\w*|blood\w*|zombie\w*|war|warfare|army|horror|scary|gore|weapon\w*|bomb\w*|dating|kiss\w*|girlfriend|boyfriend|sexy|casino|gambl\w*|slots?|poker|bet|betting|prank|fight\w*|battle\w*|knife|assassin\w*|murder\w*)\b/i;
+/**
+ * Nur Glücksspiel bleibt draußen (in Deutschland ohne Lizenz verboten, Glücksspielstaatsvertrag).
+ * Alle anderen Spiele dürfen rein – ausgesucht wird ohnehin von Hand im Admin-Bereich.
+ */
+export const BLOCKED_WORDS = /\b(casino\w*|gambl\w*|slots?|slot machine|poker|roulette|blackjack|betting|jackpot)\b/i;
+
+/** Fallback-Kategorie für Spiele, deren Anbieter-Kategorie wir nicht kennen */
+export function guessCategory(text: string): ArcadeCategory {
+  if (/shoot|sniper|gun|war|army|battle|fight|zombie|horror|stickman|\.io|\bio\b|action|ninja|tank|craft/i.test(text)) return "action";
+  if (/race|racing|car|drift|moto|bike|truck/i.test(text)) return "racing";
+  if (/puzzle|match|merge|block|word|mahjong|jigsaw/i.test(text)) return "puzzle";
+  if (/ball|soccer|football|basket|golf|sport/i.test(text)) return "sports";
+  return "casual";
+}
