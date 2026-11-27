@@ -83,6 +83,8 @@ async function GameBody({ params }: { params: PageProps<"/[lang]/arcade/[game]">
         icon={CATEGORY_ICON[tile.category]}
         href={withLocale(locale, `/c/${tile.category}`)}
         showAll={b.showAll}
+        prevLabel={b.prev}
+        nextLabel={b.next}
         tiles={more}
         originalLabel={b.original}
       />
@@ -103,6 +105,7 @@ async function Player({ game, locale, dict }: { game: ArcadeGame; locale: Locale
   return (
     <ArcadePlayer
       src={src}
+      gameKey={game.id.toLowerCase()}
       title={game.title}
       width={game.width}
       height={game.height}

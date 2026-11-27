@@ -9,7 +9,14 @@ import { withLocale, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentUser } from "@/lib/auth/session";
-import { CATEGORY_ICON, CATEGORY_TINT, SITE_CATEGORIES, allTiles, byCategory, newest } from "@/lib/catalog";
+import {
+  CATEGORY_ICON,
+  CATEGORY_TINT,
+  SITE_CATEGORIES,
+  allTiles,
+  byCategory,
+  newest,
+} from "@/lib/catalog";
 import { GAME_RANK_SYSTEMS, gameRankForLevel } from "@/lib/game-ranks";
 import { getGuildBoard } from "@/lib/guilds/queries";
 import { levelFromXp } from "@/lib/levels";
@@ -26,25 +33,38 @@ export default async function HomePage() {
   return (
     <div className="w-full space-y-9 px-4 py-5 sm:px-6">
       <h1 className="sr-only">{b.forYou}</h1>
-      <Suspense fallback={<div className="h-16 animate-pulse rounded-2xl bg-surface" />}>
+      <Suspense
+        fallback={<div className="h-16 animate-pulse rounded-2xl bg-surface" />}
+      >
         <MyStrip locale={locale} dict={dict} />
       </Suspense>
 
       {/* Abteilungen gleich oben – bunte Knöpfe für jede Kategorie */}
-      <nav aria-label={b.categoriesTitle} className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:flex-wrap sm:px-6">
+      <nav
+        aria-label={b.categoriesTitle}
+        className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:flex-wrap sm:px-6"
+      >
         {SITE_CATEGORIES.map((cat) => (
           <Link
             key={cat}
             href={withLocale(locale, `/c/${cat}`)}
             className="flex shrink-0 items-center gap-2 rounded-2xl border border-border bg-surface py-2 pl-2 pr-4 text-sm font-bold transition-transform hover:-translate-y-0.5 hover:border-border-strong"
           >
-            <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-xl text-base" style={{ background: CATEGORY_TINT[cat] }}>
+            <span
+              aria-hidden="true"
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-base"
+              style={{ background: CATEGORY_TINT[cat] }}
+            >
               {CATEGORY_ICON[cat]}
             </span>
             {b.categories[cat]}
           </Link>
         ))}
       </nav>
+
+      <Suspense fallback={null}>
+        <RecentRow locale={locale} dict={dict} />
+      </Suspense>
 
       <TileRow
         size="lg"
@@ -53,6 +73,8 @@ export default async function HomePage() {
         tint={CATEGORY_TINT.popular}
         href={withLocale(locale, "/c/popular")}
         showAll={b.showAll}
+        prevLabel={b.prev}
+        nextLabel={b.next}
         tiles={top}
         originalLabel={b.original}
       />
@@ -62,6 +84,8 @@ export default async function HomePage() {
         tint={CATEGORY_TINT.new}
         href={withLocale(locale, "/c/new")}
         showAll={b.showAll}
+        prevLabel={b.prev}
+        nextLabel={b.next}
         tiles={newest(data.all).slice(0, 16)}
         originalLabel={b.original}
       />
@@ -73,6 +97,8 @@ export default async function HomePage() {
           tint={CATEGORY_TINT[cat]}
           href={withLocale(locale, `/c/${cat}`)}
           showAll={b.showAll}
+          prevLabel={b.prev}
+          nextLabel={b.next}
           tiles={byCategory(data.all, cat).slice(0, 16)}
           originalLabel={b.original}
         />
@@ -81,7 +107,12 @@ export default async function HomePage() {
       {data.all.length > 12 && (
         <section>
           <h2 className="mb-3 flex items-center gap-2.5 text-xl font-black tracking-tight sm:text-2xl">
-            <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-lg">🎮</span>
+            <span
+              aria-hidden="true"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-lg"
+            >
+              🎮
+            </span>
             {b.allRow}
           </h2>
           <Mosaic tiles={data.all.slice(12)} originalLabel={b.original} />
@@ -89,14 +120,62 @@ export default async function HomePage() {
       )}
 
       <section className="grid gap-5 md:grid-cols-2">
-        <Suspense fallback={<div className="h-72 animate-pulse rounded-2xl bg-surface" />}>
+        <Suspense
+          fallback={
+            <div className="h-72 animate-pulse rounded-2xl bg-surface" />
+          }
+        >
           <TopPlayers locale={locale} dict={dict} />
         </Suspense>
-        <Suspense fallback={<div className="h-72 animate-pulse rounded-2xl bg-surface" />}>
+        <Suspense
+          fallback={
+            <div className="h-72 animate-pulse rounded-2xl bg-surface" />
+          }
+        >
           <TopGuilds locale={locale} dict={dict} />
         </Suspense>
       </section>
     </div>
+  );
+}
+
+/** „Zuletzt gespielt“ – am Konto gespeichert, nur für angemeldete Spieler */
+async function RecentRow({
+  locale,
+  dict,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+}) {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("game_recent")
+    .select("game_key")
+    .eq("user_id", user.id)
+    .order("played_at", { ascending: false })
+    .limit(16);
+  if (!data?.length) return null;
+  const { arcade } = await allTiles(locale);
+  const byKey = new Map(
+    arcade.map((t) => [t.kind === "arcade" ? t.game.id.toLowerCase() : t.key, t]),
+  );
+  const tiles = data
+    .map((r) => byKey.get(r.game_key))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t));
+  const b = dict.browse;
+  return (
+    <TileRow
+      title={b.recentRow}
+      icon="🕹️"
+      tint="#38bdf8"
+      showAll={b.showAll}
+      prevLabel={b.prev}
+      nextLabel={b.next}
+      tiles={tiles}
+      originalLabel={b.original}
+    />
   );
 }
 
@@ -112,8 +191,16 @@ async function MyStrip({ locale, dict }: { locale: Locale; dict: Dictionary }) {
           <p className="text-sm text-muted">{t.heroText}</p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <ButtonLink href={withLocale(locale, "/register")} size="sm">{dict.auth.register.submit}</ButtonLink>
-          <ButtonLink href={withLocale(locale, "/login")} size="sm" variant="secondary">{dict.nav.login}</ButtonLink>
+          <ButtonLink href={withLocale(locale, "/register")} size="sm">
+            {dict.auth.register.submit}
+          </ButtonLink>
+          <ButtonLink
+            href={withLocale(locale, "/login")}
+            size="sm"
+            variant="secondary"
+          >
+            {dict.nav.login}
+          </ButtonLink>
         </div>
       </div>
     );
@@ -131,7 +218,12 @@ async function MyStrip({ locale, dict }: { locale: Locale; dict: Dictionary }) {
       className="grid items-center gap-3 rounded-2xl border border-border bg-surface p-3 transition-colors hover:border-border-strong sm:grid-cols-[auto_1fr_1fr] sm:gap-5 sm:p-4"
     >
       <div className="flex items-center gap-3">
-        <Avatar url={user.avatarUrl} name={user.username} size={44} className="border-2 border-accent/60" />
+        <Avatar
+          url={user.avatarUrl}
+          name={user.username}
+          size={44}
+          className="border-2 border-accent/60"
+        />
         <div className="min-w-0">
           <p className="truncate font-bold">{user.username}</p>
           <p className="text-xs font-semibold text-accent-hover">
@@ -142,21 +234,46 @@ async function MyStrip({ locale, dict }: { locale: Locale; dict: Dictionary }) {
       <div>
         <div className="flex justify-between text-xs text-muted">
           <span className="font-bold text-foreground">Lv. {lvl.level}</span>
-          <span>{lvl.xpForNext - lvl.xpIntoLevel} XP → Lv. {lvl.level + 1}</span>
+          <span>
+            {lvl.xpForNext - lvl.xpIntoLevel} XP → Lv. {lvl.level + 1}
+          </span>
         </div>
-        <ProgressBar className="mt-1.5" value={lvl.xpIntoLevel} max={lvl.xpForNext} label={dict.auth.account.level} />
+        <ProgressBar
+          className="mt-1.5"
+          value={lvl.xpIntoLevel}
+          max={lvl.xpForNext}
+          label={dict.auth.account.level}
+        />
       </div>
       <div>
-        <p className="text-xs text-muted">{t.todayXp.replace("{today}", String(today)).replace("{cap}", String(cap))}</p>
-        <ProgressBar className="mt-1.5" value={today} max={cap} label={t.gameXp} />
+        <p className="text-xs text-muted">
+          {t.todayXp
+            .replace("{today}", String(today))
+            .replace("{cap}", String(cap))}
+        </p>
+        <ProgressBar
+          className="mt-1.5"
+          value={today}
+          max={cap}
+          label={t.gameXp}
+        />
       </div>
     </Link>
   );
 }
 
-async function TopPlayers({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+async function TopPlayers({
+  locale,
+  dict,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+}) {
   const t = dict.games;
-  const { data } = await createPublicClient().rpc("game_leaderboard", { p_period: "weekly", p_limit: 5 });
+  const { data } = await createPublicClient().rpc("game_leaderboard", {
+    p_period: "weekly",
+    p_limit: 5,
+  });
   const rows = data ?? [];
   return (
     <div className="rounded-2xl border border-border bg-surface p-5">
@@ -167,24 +284,45 @@ async function TopPlayers({ locale, dict }: { locale: Locale; dict: Dictionary }
         <ol className="mt-3 divide-y divide-border">
           {rows.map((r) => (
             <li key={r.user_id}>
-              <Link href={withLocale(locale, `/u/${encodeURIComponent(r.username)}`)} className="flex items-center gap-3 py-2.5 hover:text-accent-hover">
-                <span className="w-6 text-sm font-black text-subtle">{r.place}</span>
+              <Link
+                href={withLocale(
+                  locale,
+                  `/u/${encodeURIComponent(r.username)}`,
+                )}
+                className="flex items-center gap-3 py-2.5 hover:text-accent-hover"
+              >
+                <span className="w-6 text-sm font-black text-subtle">
+                  {r.place}
+                </span>
                 <Avatar url={r.avatar_url} name={r.username} size={34} />
-                <span className="flex-1 truncate font-semibold">{r.username}</span>
-                <span className="text-sm font-bold tabular-nums">{r.xp} XP</span>
+                <span className="flex-1 truncate font-semibold">
+                  {r.username}
+                </span>
+                <span className="text-sm font-bold tabular-nums">
+                  {r.xp} XP
+                </span>
               </Link>
             </li>
           ))}
         </ol>
       )}
-      <Link href={withLocale(locale, "/leaderboard")} className="mt-3 inline-block text-sm font-semibold text-accent-hover hover:underline">
+      <Link
+        href={withLocale(locale, "/leaderboard")}
+        className="mt-3 inline-block text-sm font-semibold text-accent-hover hover:underline"
+      >
         {t.fullRanking} →
       </Link>
     </div>
   );
 }
 
-async function TopGuilds({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+async function TopGuilds({
+  locale,
+  dict,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+}) {
   const t = dict.games;
   const rows = ((await getGuildBoard("weekly", 5)) ?? []).slice(0, 5);
   return (
@@ -196,20 +334,34 @@ async function TopGuilds({ locale, dict }: { locale: Locale; dict: Dictionary })
         <ol className="mt-3 divide-y divide-border">
           {rows.map((g) => (
             <li key={g.guild_id}>
-              <Link href={withLocale(locale, `/guilds/${g.tag}`)} className="flex items-center gap-3 py-2.5 hover:text-accent-hover">
-                <span className="w-6 text-sm font-black text-subtle">{g.place}</span>
-                <GuildEmblem image={g.image_url} tag={g.tag} color={g.color as GuildColor} size={34} />
+              <Link
+                href={withLocale(locale, `/guilds/${g.tag}`)}
+                className="flex items-center gap-3 py-2.5 hover:text-accent-hover"
+              >
+                <span className="w-6 text-sm font-black text-subtle">
+                  {g.place}
+                </span>
+                <GuildEmblem
+                  image={g.image_url}
+                  tag={g.tag}
+                  color={g.color as GuildColor}
+                  size={34}
+                />
                 <span className="flex-1 truncate font-semibold">{g.name}</span>
-                <span className="text-sm font-bold tabular-nums">{g.xp} XP</span>
+                <span className="text-sm font-bold tabular-nums">
+                  {g.xp} XP
+                </span>
               </Link>
             </li>
           ))}
         </ol>
       )}
-      <Link href={withLocale(locale, "/leaderboard/guilds")} className="mt-3 inline-block text-sm font-semibold text-accent-hover hover:underline">
+      <Link
+        href={withLocale(locale, "/leaderboard/guilds")}
+        className="mt-3 inline-block text-sm font-semibold text-accent-hover hover:underline"
+      >
         {t.fullRanking} →
       </Link>
     </div>
   );
 }
-

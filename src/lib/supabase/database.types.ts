@@ -277,6 +277,7 @@ export type Database = {
       guild_members: Table<GuildMemberRow, never, never>;
       game_profiles: Table<GameProfileRow, never, never>;
       game_best_scores: Table<GameBestScoreRow, never, never>;
+      game_recent: Table<{ user_id: string; game_key: string; played_at: string }, never, never>;
       game_score_events: Table<GameScoreEventRow, never, never>;
       arcade_picks: Table<ArcadePickRow, Omit<ArcadePickRow, "created_at">, never>;
       user_activity_days: Table<ActivityDayRow, never, never>;
@@ -331,6 +332,7 @@ export type Database = {
     Functions: {
       submit_game_score: { Args: { p_game: string; p_score: number; p_duration_ms: number }; Returns: unknown };
       claim_arcade_minute: { Args: Record<string, never>; Returns: unknown };
+      touch_recent_game: { Args: { p_key: string }; Returns: undefined };
       set_game_rank_system: { Args: { p_system: string }; Returns: undefined };
       my_game_stats: { Args: Record<string, never>; Returns: unknown };
       game_leaderboard: {

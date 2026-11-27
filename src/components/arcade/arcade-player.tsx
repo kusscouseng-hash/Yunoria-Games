@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { claimArcadeMinute } from "@/lib/arcade/actions";
+import { claimArcadeMinute, recordRecentGame } from "@/lib/arcade/actions";
 
 const CONSENT_KEY = "yg-arcade-consent";
 
@@ -34,6 +34,7 @@ type Texts = {
  */
 export function ArcadePlayer({
   src,
+  gameKey,
   title,
   width,
   height,
@@ -43,6 +44,7 @@ export function ArcadePlayer({
   t,
 }: {
   src: string;
+  gameKey: string;
   title: string;
   width: number;
   height: number;
@@ -56,6 +58,11 @@ export function ArcadePlayer({
   const remembered = useSyncExternalStore(noSubscribe, storedConsent, () => false);
   const loaded = accepted || remembered;
   const [status, setStatus] = useState<string | null>(null);
+
+  // Für „Zuletzt gespielt“ merken, sobald das Spiel geladen ist
+  useEffect(() => {
+    if (loaded && signedIn) recordRecentGame(gameKey).catch(() => {});
+  }, [loaded, signedIn, gameKey]);
 
   // Spielzeit zählen: alle 5 s prüfen, nach 60 aktiven Sekunden eine Minute melden
   useEffect(() => {

@@ -69,6 +69,8 @@ export default async function PlayPage({ params, searchParams }: PageProps<"/[la
         icon={CATEGORY_ICON.originals}
         href={withLocale(locale, "/c/originals")}
         showAll={b.showAll}
+        prevLabel={b.prev}
+        nextLabel={b.next}
         tiles={data.own.filter((x) => x.key !== tile.key)}
         originalLabel={b.original}
       />

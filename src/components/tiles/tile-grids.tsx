@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Tile } from "@/lib/catalog";
 import { GameTile, WideTile } from "./game-tile";
+import { ScrollRow } from "./scroll-row";
 
 /**
  * Dichtes Mosaik aus quadratischen Kacheln. Einzelne Kacheln sind doppelt so groß
@@ -32,7 +33,11 @@ export function TileRow({
   originalLabel,
   size = "md",
   tint,
+  prevLabel = "‹",
+  nextLabel = "›",
 }: {
+  prevLabel?: string;
+  nextLabel?: string;
   tint?: string;
   size?: "md" | "lg";
   title: string;
@@ -60,11 +65,11 @@ export function TileRow({
           </Link>
         )}
       </div>
-      <div className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:thin] sm:-mx-6 sm:scroll-px-6 sm:px-6">
+      <ScrollRow prevLabel={prevLabel} nextLabel={nextLabel}>
         {tiles.map((t) => (
           <WideTile key={t.key} tile={t} originalLabel={originalLabel} size={size} />
         ))}
-      </div>
+      </ScrollRow>
     </section>
   );
 }
