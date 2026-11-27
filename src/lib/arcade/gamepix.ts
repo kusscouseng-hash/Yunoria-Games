@@ -1,25 +1,12 @@
 import "server-only";
 import { cacheLife } from "next/cache";
+import { BLOCKED_WORDS, type ArcadeCategory, type ArcadeGame } from "./types";
 
 /**
  * Spiele von GamePix (lizenzierter Spiele-Vertrieb, Werbung läuft über GamePix
  * mit Umsatzbeteiligung). Ohne eigene Partner-ID (GAMEPIX_SID) bleibt der Bereich aus.
  * Doku: https://docs.gamepix.com/docs
  */
-export type ArcadeGame = {
-  id: string;
-  namespace: string;
-  title: string;
-  description: string;
-  category: string;
-  orientation: string;
-  width: number;
-  height: number;
-  banner: string;
-  icon: string;
-  /** Veröffentlichung bei GamePix (ms) – für „Neu“ */
-  published: number;
-};
 
 /** Familienfreundliche Kategorien – Ballern, Krieg, Zombies, Kämpfe usw. bleiben draußen. */
 export const ARCADE_CATEGORIES = [
@@ -49,12 +36,37 @@ export const ARCADE_CATEGORIES = [
   "adventure",
   "fun",
 ] as const;
-export type ArcadeCategory = (typeof ARCADE_CATEGORIES)[number];
-const ALLOWED = new Set<string>(ARCADE_CATEGORIES);
+export type GamepixCategory = (typeof ARCADE_CATEGORIES)[number];
 
-/** Titel/Beschreibungen mit diesen Wörtern werden zusätzlich ausgefiltert. */
-const BLOCKED_WORDS =
-  /\b(gun|guns|sniper|shoot\w*|shooter|kill\w*|blood\w*|zombie\w*|war|warfare|army|horror|scary|gore|weapon\w*|bomb\w*|dating|kiss\w*|girlfriend|boyfriend|sexy|casino|gambl\w*|slots?|poker|bet|betting|prank|fight\w*|battle\w*|knife|assassin\w*|murder\w*)\b/i;
+/** GamePix-Kategorie → unsere Kategorie */
+const TO_SITE: Record<GamepixCategory, ArcadeCategory> = {
+  arcade: "action",
+  "hyper-casual": "action",
+  puzzle: "puzzle",
+  "match-3": "puzzle",
+  "2048": "puzzle",
+  "hidden-object": "puzzle",
+  racing: "racing",
+  driving: "racing",
+  sports: "sports",
+  soccer: "sports",
+  ball: "sports",
+  memory: "brain",
+  trivia: "brain",
+  math: "brain",
+  educational: "brain",
+  casual: "casual",
+  fun: "casual",
+  drawing: "creative",
+  building: "creative",
+  animal: "animals",
+  cats: "animals",
+  farming: "animals",
+  strategy: "strategy",
+  simulation: "strategy",
+  adventure: "strategy",
+};
+const isGamepixCategory = (c: string): c is GamepixCategory => c in TO_SITE;
 
 export function gamepixSid(): string | null {
   const sid = process.env.GAMEPIX_SID?.trim();
@@ -79,7 +91,7 @@ type FeedItem = {
   date_published?: string;
 };
 
-const PAGES = 4; // 4 × 96 = die 384 bestbewerteten Spiele
+const PAGES = 8; // 8 × 96 = die 768 bestbewerteten Spiele (Auswahl im Admin-Bereich)
 
 /** Lädt die bestbewerteten Spiele (zwischengespeichert, höchstens alle paar Stunden neu). */
 export async function getArcadeCatalog(sid: string): Promise<ArcadeGame[]> {
@@ -92,21 +104,22 @@ export async function getArcadeCatalog(sid: string): Promise<ArcadeGame[]> {
     if (!res.ok) break;
     const data = (await res.json()) as { items?: FeedItem[] };
     for (const it of data.items ?? []) {
-      if (!it?.namespace || seen.has(it.namespace) || !ALLOWED.has(it.category)) continue;
+      if (!it?.namespace || seen.has(it.namespace) || !isGamepixCategory(it.category)) continue;
       if (BLOCKED_WORDS.test(`${it.title} ${it.description ?? ""}`)) continue;
-      if (!/^[a-z0-9-]+$/.test(it.namespace) || !it.banner_image?.startsWith("https://img.gamepix.com/")) continue;
+      if (!/^[a-z0-9-]+$/.test(it.namespace) || it.namespace.startsWith("gd-") || !it.banner_image?.startsWith("https://img.gamepix.com/")) continue;
       seen.add(it.namespace);
+      const banner = it.banner_image.replace(/\?w=\d+/, "?w=480");
+      const icon = String(it.image ?? "").replace(/\?w=\d+/, "?w=400");
       out.push({
-        id: String(it.id),
-        namespace: it.namespace,
+        source: "gpx",
+        id: it.namespace,
         title: String(it.title).slice(0, 80),
         description: String(it.description ?? "").slice(0, 400),
-        category: it.category,
-        orientation: it.orientation,
+        category: TO_SITE[it.category],
         width: Number(it.width) || 800,
         height: Number(it.height) || 600,
-        banner: it.banner_image.replace(/\?w=\d+/, "?w=480"),
-        icon: String(it.image ?? "").replace(/\?w=\d+/, "?w=400"),
+        banner,
+        icon: icon.startsWith("https://img.gamepix.com/") ? icon : banner,
         published: Date.parse(it.date_published ?? "") || 0,
       });
     }

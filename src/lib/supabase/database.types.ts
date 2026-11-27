@@ -247,6 +247,19 @@ export type CreatorApplicationRow = {
   created_at: string;
 };
 
+export type ArcadePickRow = {
+  source: "gpx" | "gd";
+  game_id: string;
+  title: string;
+  description: string;
+  category: string;
+  width: number;
+  height: number;
+  banner: string;
+  icon: string;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -265,6 +278,7 @@ export type Database = {
       game_profiles: Table<GameProfileRow, never, never>;
       game_best_scores: Table<GameBestScoreRow, never, never>;
       game_score_events: Table<GameScoreEventRow, never, never>;
+      arcade_picks: Table<ArcadePickRow, Omit<ArcadePickRow, "created_at">, never>;
       user_activity_days: Table<ActivityDayRow, never, never>;
       chapter_texts: Table<ChapterTextRow, Omit<ChapterTextRow, "created_at" | "updated_at">, Partial<ChapterTextRow>>;
       chapter_pages: Table<ChapterPageRow, Omit<ChapterPageRow, "id">, Partial<Omit<ChapterPageRow, "id">>>;

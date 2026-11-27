@@ -1,11 +1,12 @@
 import "server-only";
 import { withLocale, type Locale } from "@/i18n/config";
-import { getArcadeCatalog, gamepixSid, type ArcadeGame } from "@/lib/arcade/gamepix";
+import { activeSources, getPicks, providerCatalog } from "@/lib/arcade/sources";
+import type { ArcadeGame } from "@/lib/arcade/types";
 import { OWN_GAMES_ENABLED, VISIBLE_GAMES, type GameInfo, type GameSlug } from "@/lib/games/registry";
 
 /**
  * Ein gemeinsamer Spielekatalog für die ganze Seite: eigene Spiele („Originals“)
- * plus die eingebetteten GamePix-Spiele, sortiert in unsere eigenen Kategorien.
+ * plus die handverlesenen Partner-Spiele (GamePix, GameDistribution) in unseren eigenen Kategorien.
  */
 export const SITE_CATEGORIES = ["action", "puzzle", "racing", "sports", "brain", "casual", "creative", "animals", "strategy"] as const;
 export type SiteCategory = (typeof SITE_CATEGORIES)[number];
@@ -44,34 +45,6 @@ export const CATEGORY_TINT: Record<SiteCategory | Collection, string> = {
   creative: "#fbbf24",
   animals: "#a3e635",
   strategy: "#c084fc",
-};
-
-const ARCADE_TO_SITE: Record<string, SiteCategory> = {
-  arcade: "action",
-  "hyper-casual": "action",
-  puzzle: "puzzle",
-  "match-3": "puzzle",
-  "2048": "puzzle",
-  "hidden-object": "puzzle",
-  racing: "racing",
-  driving: "racing",
-  sports: "sports",
-  soccer: "sports",
-  ball: "sports",
-  memory: "brain",
-  trivia: "brain",
-  math: "brain",
-  educational: "brain",
-  casual: "casual",
-  fun: "casual",
-  drawing: "creative",
-  building: "creative",
-  animal: "animals",
-  cats: "animals",
-  farming: "animals",
-  strategy: "strategy",
-  simulation: "strategy",
-  adventure: "strategy",
 };
 
 const OWN_TO_SITE: Record<GameInfo["category"], SiteCategory> = {
@@ -126,27 +99,30 @@ export function ownTiles(locale: Locale): Tile[] {
   }));
 }
 
+/**
+ * Partner-Spiele für die öffentliche Seite: die handverlesene Auswahl aus dem Admin-Bereich.
+ * Solange noch nichts ausgewählt ist, wie bisher die bestbewerteten GamePix-Spiele.
+ */
 export async function arcadeTiles(locale: Locale): Promise<Tile[]> {
-  const sid = gamepixSid();
-  if (!sid) return [];
-  const games = await getArcadeCatalog(sid);
-  return games
-    .filter((g) => ARCADE_TO_SITE[g.category])
-    .map((g) => ({
-      kind: "arcade" as const,
-      key: `gpx:${g.namespace}`,
-      href: withLocale(locale, `/arcade/${g.namespace}`),
-      title: g.title,
-      category: ARCADE_TO_SITE[g.category],
-      icon: g.icon.startsWith("https://img.gamepix.com/") ? g.icon : g.banner,
-      cover: g.banner,
-      published: g.published,
-      description: g.description,
-      game: g,
-    }));
+  const active = activeSources();
+  if (active.length === 0) return [];
+  const picks = await getPicks();
+  const games = picks && picks.length > 0 ? picks.filter((g) => active.includes(g.source)) : await providerCatalog("gpx");
+  return games.map((g) => ({
+    kind: "arcade" as const,
+    key: `${g.source}:${g.id}`,
+    href: withLocale(locale, `/arcade/${g.id}`),
+    title: g.title,
+    category: g.category,
+    icon: g.icon,
+    cover: g.banner,
+    published: g.published,
+    description: g.description,
+    game: g,
+  }));
 }
 
-/** Alle Spiele: eigene zuerst, dann GamePix nach Bewertung */
+/** Alle Spiele: eigene zuerst, dann die Partner-Spiele */
 export async function allTiles(locale: Locale): Promise<{ own: Tile[]; arcade: Tile[]; all: Tile[] }> {
   const own = ownTiles(locale);
   const arcade = await arcadeTiles(locale);

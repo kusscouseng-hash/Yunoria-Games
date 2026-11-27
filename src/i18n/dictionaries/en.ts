@@ -180,16 +180,16 @@ export const en = {
   },
   arcade: {
     title: "More games",
-    subtitle: "Hundreds of licensed browser games from our partner GamePix. Playing time earns a small XP bonus.",
+    subtitle: "Hand-picked, licensed browser games from our partners. Playing time earns XP.",
     all: "All",
     homeTitle: "More games",
     showAll: "Show all",
     play: "Play",
     back: "All more games",
     consentTitle: "Load game?",
-    consentText: "This game is provided by GamePix. When it loads, your browser connects to GamePix and ads may be shown inside the game. GamePix may use cookies for this.",
+    consentText: "This game is provided by {provider}. When it loads, your browser connects to {provider} and ads may be shown inside the game. {provider} may use cookies for this.",
     consentButton: "Load game",
-    privacyLink: "GamePix cookie policy",
+    privacyLink: "{provider} privacy policy",
     xpInfo: "Playing time bonus: 4 XP per active minute, up to 200 XP per day.",
     xpGained: "+{xp} XP for playing time · today {today}/{cap}",
     capReached: "Daily limit reached (200 XP). See you tomorrow!",
@@ -197,7 +197,7 @@ export const en = {
     signIn: "Sign in",
     fullscreen: "Fullscreen",
     notConfigured: "More games are coming soon.",
-    provider: "Games provided by GamePix",
+    provider: "Provided by {provider}",
     empty: "No games in this category right now.",
     categories: {
       "puzzle": "Puzzle",
@@ -467,7 +467,7 @@ export const en = {
     },
   },
   footer: {
-    rightsNote: "All games are licensed and provided by GamePix.",
+    rightsNote: "All games are licensed and provided by our partners GamePix and GameDistribution.",
   },
   home: {
     badge: "Manga · Manhwa · Manhua · Comics",

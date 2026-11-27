@@ -20,11 +20,16 @@ Kostenlose Browser-Spiele mit Leveln, Rängen, Gilden und Wochen-Ranglisten – 
 2. Eintrag in `src/lib/games/registry.ts` und in `GAMES` von `game-shell.tsx`.
 3. Regel in `game_rules` (neue Migration): Punkte pro Sekunde, Mindestdauer, Höchstpunkte, Punkte pro XP.
 
-## Mehr Spiele (GamePix)
+## Partner-Spiele (GamePix + GameDistribution)
 
-- Unter `/arcade` werden lizenzierte Browserspiele von GamePix eingebettet (Werbung läuft über GamePix, Umsatzbeteiligung laut GamePix-Partnervertrag).
-- Voraussetzung: eigene Partner-ID als `GAMEPIX_SID` in Vercel. Ohne sie bleibt der Bereich aus.
-- Nur familienfreundliche Kategorien, zusätzlich Wortfilter (`src/lib/arcade/gamepix.ts`).
+- Lizenzierte Browserspiele von zwei Partnern werden eingebettet (Werbung läuft über den Partner, Umsatzbeteiligung laut Partnervertrag):
+  - **GamePix:** braucht die eigene Partner-ID als `GAMEPIX_SID` in Vercel.
+  - **GameDistribution:** Katalog ist öffentlich, standardmäßig an (`GAMEDISTRIBUTION_ENABLED=false` schaltet aus).
+    Damit Einnahmen ankommen, die Domain als Publisher bei GameDistribution anmelden.
+- **Handverlesene Auswahl:** Unter `/de/admin/arcade` (nur Admins, Controller-Symbol oben rechts) Spiele durchsehen,
+  testen und mit „Aufnehmen“ auswählen. Sobald mindestens ein Spiel ausgewählt ist, zeigt die Seite nur noch die Auswahl.
+  Solange die Auswahl leer ist, wie bisher die bestbewerteten GamePix-Spiele. Migration: `20261127220000_arcade_picks.sql`.
+- Nur familienfreundliche Kategorien, zusätzlich Wortfilter (`src/lib/arcade/`).
 - Spiel lädt erst nach Klick (Datenschutz). Spielzeit-Bonus: 4 XP pro aktiver Minute, max. 200 XP/Tag (Migrationen `20261124200000_arcade_playtime.sql`, `20261127230000_arcade_bonus_up.sql`).
 
 ## Tests

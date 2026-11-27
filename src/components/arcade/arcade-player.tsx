@@ -28,8 +28,8 @@ type Texts = {
 };
 
 /**
- * Spielt ein GamePix-Spiel im iframe. Das Spiel (und dessen Werbung) wird erst nach
- * einem Klick geladen, weil dabei Daten an GamePix gehen. Angemeldete Spieler bekommen
+ * Spielt ein Partner-Spiel (GamePix, GameDistribution) im iframe. Das Spiel (und dessen
+ * Werbung) wird erst nach einem Klick geladen, weil dabei Daten an den Anbieter gehen. Angemeldete Spieler bekommen
  * für jede aktive Minute (Tab sichtbar und im Fokus) einen kleinen XP-Bonus.
  */
 export function ArcadePlayer({
@@ -39,6 +39,7 @@ export function ArcadePlayer({
   height,
   signedIn,
   loginHref,
+  privacyUrl,
   t,
 }: {
   src: string;
@@ -47,6 +48,7 @@ export function ArcadePlayer({
   height: number;
   signedIn: boolean;
   loginHref: string;
+  privacyUrl: string;
   t: Texts;
 }) {
   const [accepted, setAccepted] = useState(false);
@@ -117,7 +119,7 @@ export function ArcadePlayer({
               {t.consentButton}
             </button>
             <a
-              href="https://www.iubenda.com/privacy-policy/64038034/cookie-policy"
+              href={privacyUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-white/60 underline hover:text-white"

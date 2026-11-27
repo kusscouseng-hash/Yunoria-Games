@@ -182,16 +182,16 @@ export const de: Dictionary = {
   },
   arcade: {
     title: "Mehr Spiele",
-    subtitle: "Hunderte lizenzierte Browserspiele von unserem Partner GamePix. Spielzeit bringt XP.",
+    subtitle: "Handverlesene, lizenzierte Browserspiele von unseren Partnern. Spielzeit bringt XP.",
     all: "Alle",
     homeTitle: "Mehr Spiele",
     showAll: "Alle anzeigen",
     play: "Spielen",
     back: "Alle weiteren Spiele",
     consentTitle: "Spiel laden?",
-    consentText: "Dieses Spiel stellt GamePix bereit. Beim Laden verbindet sich dein Browser mit GamePix, und im Spiel kann Werbung erscheinen. GamePix kann dafür Cookies verwenden.",
+    consentText: "Dieses Spiel stellt {provider} bereit. Beim Laden verbindet sich dein Browser mit {provider}, und im Spiel kann Werbung erscheinen. {provider} kann dafür Cookies verwenden.",
     consentButton: "Spiel laden",
-    privacyLink: "Cookie-Richtlinie von GamePix",
+    privacyLink: "Datenschutz bei {provider}",
     xpInfo: "Spielzeit-Bonus: 4 XP pro aktiver Minute, bis zu 200 XP am Tag.",
     xpGained: "+{xp} XP für Spielzeit · heute {today}/{cap}",
     capReached: "Tageslimit erreicht (200 XP). Morgen geht es weiter!",
@@ -199,7 +199,7 @@ export const de: Dictionary = {
     signIn: "Anmelden",
     fullscreen: "Vollbild",
     notConfigured: "Weitere Spiele kommen bald.",
-    provider: "Spiele bereitgestellt von GamePix",
+    provider: "Bereitgestellt von {provider}",
     empty: "Gerade keine Spiele in dieser Kategorie.",
     categories: {
       "puzzle": "Puzzle",
@@ -469,7 +469,7 @@ export const de: Dictionary = {
     },
   },
   footer: {
-    rightsNote: "Alle Spiele werden lizenziert von GamePix bereitgestellt.",
+    rightsNote: "Alle Spiele werden lizenziert von unseren Partnern GamePix und GameDistribution bereitgestellt.",
   },
   home: {
     badge: "Manga · Manhwa · Manhua · Comics",
