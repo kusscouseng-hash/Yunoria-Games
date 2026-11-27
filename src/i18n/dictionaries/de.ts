@@ -473,7 +473,7 @@ export const de: Dictionary = {
     },
   },
   footer: {
-    rightsNote: "Alle Spiele werden lizenziert von unseren Partnern GamePix und GameDistribution bereitgestellt.",
+    rightsNote: "Alle Spiele werden lizenziert von unseren Partnern GamePix, GameDistribution und Playgama bereitgestellt.",
   },
   home: {
     badge: "Manga · Manhwa · Manhua · Comics",

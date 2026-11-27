@@ -106,7 +106,7 @@ export async function getArcadeCatalog(sid: string): Promise<ArcadeGame[]> {
     for (const it of data.items ?? []) {
       if (!it?.namespace || seen.has(it.namespace) || !it.category) continue;
       if (BLOCKED_WORDS.test(`${it.title} ${it.description ?? ""}`)) continue;
-      if (!/^[a-z0-9-]+$/.test(it.namespace) || it.namespace.startsWith("gd-") || !it.banner_image?.startsWith("https://img.gamepix.com/")) continue;
+      if (!/^[a-z0-9-]+$/.test(it.namespace) || it.namespace.startsWith("gd-") || it.namespace.startsWith("pg-") || !it.banner_image?.startsWith("https://img.gamepix.com/")) continue;
       seen.add(it.namespace);
       const banner = it.banner_image.replace(/\?w=\d+/, "?w=480");
       const icon = String(it.image ?? "").replace(/\?w=\d+/, "?w=400");

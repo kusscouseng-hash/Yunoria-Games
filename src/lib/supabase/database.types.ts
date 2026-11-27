@@ -248,7 +248,7 @@ export type CreatorApplicationRow = {
 };
 
 export type ArcadePickRow = {
-  source: "gpx" | "gd";
+  source: "gpx" | "gd" | "pg";
   game_id: string;
   title: string;
   description: string;
@@ -281,8 +281,8 @@ export type Database = {
       game_score_events: Table<GameScoreEventRow, never, never>;
       arcade_picks: Table<ArcadePickRow, Omit<ArcadePickRow, "created_at">, never>;
       arcade_hidden: Table<
-        { game_id: string; source: "gpx" | "gd"; title: string; banner: string; created_at: string },
-        { game_id: string; source: "gpx" | "gd"; title: string; banner: string },
+        { game_id: string; source: "gpx" | "gd" | "pg"; title: string; banner: string; created_at: string },
+        { game_id: string; source: "gpx" | "gd" | "pg"; title: string; banner: string },
         never
       >;
       user_activity_days: Table<ActivityDayRow, never, never>;

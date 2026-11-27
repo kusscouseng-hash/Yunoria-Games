@@ -28,7 +28,7 @@ type Texts = {
 };
 
 /**
- * Spielt ein Partner-Spiel (GamePix, GameDistribution) im iframe. Das Spiel (und dessen
+ * Spielt ein Partner-Spiel (GamePix, GameDistribution, Playgama) im iframe. Das Spiel (und dessen
  * Werbung) wird erst nach einem Klick geladen, weil dabei Daten an den Anbieter gehen. Angemeldete Spieler bekommen
  * für jede aktive Minute (Tab sichtbar und im Fokus) einen kleinen XP-Bonus.
  */

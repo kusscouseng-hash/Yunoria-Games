@@ -471,7 +471,7 @@ export const en = {
     },
   },
   footer: {
-    rightsNote: "All games are licensed and provided by our partners GamePix and GameDistribution.",
+    rightsNote: "All games are licensed and provided by our partners GamePix, GameDistribution and Playgama.",
   },
   home: {
     badge: "Manga · Manhwa · Manhua · Comics",

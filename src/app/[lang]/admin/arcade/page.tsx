@@ -37,7 +37,7 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
   const sources = activeSources();
   const view = one(sp.view);
   type Tab = ArcadeSource | "picked" | "hidden";
-  const tab: Tab = view === "gpx" || view === "gd" || view === "picked" || view === "hidden" ? view : (sources[0] ?? "picked");
+  const tab: Tab = view === "gpx" || view === "gd" || view === "pg" || view === "picked" || view === "hidden" ? view : (sources[0] ?? "picked");
   const q = one(sp.q).trim().slice(0, 60);
   const cat = isSiteCategory(one(sp.cat)) ? one(sp.cat) : "";
   const page = Math.max(1, Number.parseInt(one(sp.page), 10) || 1);
@@ -79,7 +79,7 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
       <div>
         <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Spiele auswählen</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted">
-          Auf der Seite erscheinen automatisch alle Spiele von GamePix und GameDistribution. Mit „Aufnehmen“ kommt ein Spiel in die Reihe
+          Auf der Seite erscheinen automatisch alle Spiele von GamePix, GameDistribution und Playgama. Mit „Aufnehmen“ kommt ein Spiel in die Reihe
           „Empfohlen“ ganz oben auf der Startseite. Mit „Verstecken“ verschwindet ein langweiliges Spiel für alle – auch aus deinen Listen hier.
           Unter „Versteckt“ kannst du es wieder zeigen. Mit „Testen“ öffnest du ein Spiel in einem neuen Tab.
         </p>

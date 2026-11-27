@@ -6,7 +6,7 @@ import { OWN_GAMES_ENABLED, VISIBLE_GAMES, type GameInfo, type GameSlug } from "
 
 /**
  * Ein gemeinsamer Spielekatalog für die ganze Seite: eigene Spiele („Originals“)
- * plus die handverlesenen Partner-Spiele (GamePix, GameDistribution) in unseren eigenen Kategorien.
+ * plus die handverlesenen Partner-Spiele (GamePix, GameDistribution, Playgama) in unseren eigenen Kategorien.
  */
 export const SITE_CATEGORIES = ["action", "puzzle", "racing", "sports", "brain", "casual", "creative", "animals", "strategy"] as const;
 export type SiteCategory = (typeof SITE_CATEGORIES)[number];

@@ -20,12 +20,14 @@ Kostenlose Browser-Spiele mit Leveln, Rängen, Gilden und Wochen-Ranglisten – 
 2. Eintrag in `src/lib/games/registry.ts` und in `GAMES` von `game-shell.tsx`.
 3. Regel in `game_rules` (neue Migration): Punkte pro Sekunde, Mindestdauer, Höchstpunkte, Punkte pro XP.
 
-## Partner-Spiele (GamePix + GameDistribution)
+## Partner-Spiele (GamePix + GameDistribution + Playgama)
 
 - Lizenzierte Browserspiele von zwei Partnern werden eingebettet (Werbung läuft über den Partner, Umsatzbeteiligung laut Partnervertrag):
   - **GamePix:** braucht die eigene Partner-ID als `GAMEPIX_SID` in Vercel.
   - **GameDistribution:** Katalog ist öffentlich, standardmäßig an (`GAMEDISTRIBUTION_ENABLED=false` schaltet aus).
     Damit Einnahmen ankommen, die Domain als Publisher bei GameDistribution anmelden.
+  - **Playgama:** Spieleliste als Datei `src/data/playgama.json` (Export aus dem Playgama-Partnerbereich, gekürzt),
+    Partner-Nummer (clid) in `src/lib/arcade/playgama.ts` (`PLAYGAMA_ENABLED=false` schaltet aus). Migration: `20261128010000_arcade_playgama.sql`.
 - **Alle Spiele beider Partner** erscheinen automatisch (abwechselnd gemischt).
 - **Empfohlen:** Unter `/de/admin/arcade` (nur Admins, Controller-Symbol oben rechts) Spiele durchsehen, testen und mit
   „Aufnehmen“ empfehlen – sie kommen in die Reihe „Empfohlen“ ganz oben und vorne in „Beliebt“. Migration: `20261127220000_arcade_picks.sql`.

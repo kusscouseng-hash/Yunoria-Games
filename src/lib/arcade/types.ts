@@ -1,9 +1,9 @@
 /**
- * Gemeinsame Form für eingebettete Spiele fremder Anbieter (GamePix, GameDistribution).
+ * Gemeinsame Form für eingebettete Spiele fremder Anbieter (GamePix, GameDistribution, Playgama).
  * Die Anbieter-Dateien bringen ihre Spiele in diese Form und ordnen sie gleich einer
  * unserer Kategorien zu.
  */
-export const ARCADE_SOURCES = ["gpx", "gd"] as const;
+export const ARCADE_SOURCES = ["gpx", "gd", "pg"] as const;
 export type ArcadeSource = (typeof ARCADE_SOURCES)[number];
 
 /** Unsere eigenen Kategorien (müssen zu SITE_CATEGORIES in src/lib/catalog.ts passen) */
@@ -36,6 +36,11 @@ export const PROVIDERS: Record<ArcadeSource, { name: string; privacyUrl: string;
     name: "GamePix",
     privacyUrl: "https://www.iubenda.com/privacy-policy/64038034/cookie-policy",
     imageHost: "https://img.gamepix.com/",
+  },
+  pg: {
+    name: "Playgama",
+    privacyUrl: "https://playgama.com/confidential",
+    imageHost: "https://static.playgama.com/",
   },
   gd: {
     name: "GameDistribution",
