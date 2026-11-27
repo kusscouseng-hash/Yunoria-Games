@@ -2,8 +2,6 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import type { Locale } from "@/i18n/config";
-import { LanguageSwitcher, LanguageSwitcherLinks } from "./language-switcher";
 import { SidebarList, SidebarNav, type SidebarGroup } from "./sidebar-nav";
 
 const HIDE_KEY = "yg-sidebar-hidden";
@@ -11,12 +9,11 @@ const HIDE_KEY = "yg-sidebar-hidden";
 type Props = {
   groups: SidebarGroup[];
   homeHref: string;
-  locale: Locale;
-  labels: { open: string; close: string; nav: string; language: string };
+  labels: { open: string; close: string; nav: string };
 };
 
 /** Menü-Knopf links oben: schiebt auf Handys/Tablets die Seitenleiste herein. */
-export function MobileMenu({ groups, homeHref, locale, labels }: Props) {
+export function MobileMenu({ groups, homeHref, labels }: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -119,20 +116,7 @@ export function MobileMenu({ groups, homeHref, locale, labels }: Props) {
                   />
                 </Suspense>
               </nav>
-              <div className="mt-4 flex items-center justify-between border-t border-border px-3 pt-4">
-                <span className="text-sm text-muted">{labels.language}</span>
-                <Suspense
-                  fallback={
-                    <LanguageSwitcherLinks
-                      current={locale}
-                      label={labels.language}
-                    />
-                  }
-                >
-                  <LanguageSwitcher current={locale} label={labels.language} />
-                </Suspense>
               </div>
-            </div>
           </>,
           document.body,
         )}

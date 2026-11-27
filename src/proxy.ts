@@ -11,6 +11,13 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const first = pathname.split("/")[1];
 
+  // Die deutsche Version gibt es nicht mehr → dieselbe Seite auf Englisch
+  if (first === "de") {
+    const url = request.nextUrl.clone();
+    url.pathname = withLocale("en", pathname.slice(3) || "/");
+    return NextResponse.redirect(url, 308);
+  }
+
   if (!first || !hasLocale(first)) {
     const saved = request.cookies.get(LOCALE_COOKIE)?.value;
     const locale = saved && hasLocale(saved) ? saved : matchLocale(request.headers.get("accept-language"));

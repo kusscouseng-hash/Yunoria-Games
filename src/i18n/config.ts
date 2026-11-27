@@ -1,10 +1,13 @@
 /**
  * Sprach-Einstellungen.
- * Englisch ist die Standardsprache (Hauptzielgruppe), Deutsch ist umschaltbar.
+ * Yunoria Games gibt es nur auf Englisch (die Spiele selbst sind englisch).
+ * Alte /de/…-Adressen leitet src/proxy.ts auf /en/… um. Das deutsche Wörterbuch bleibt für später liegen.
  * Neue Sprache: hier eintragen + Wörterbuch in ./dictionaries anlegen.
  */
-export const locales = ["en", "de"] as const;
-export type Locale = (typeof locales)[number];
+/** Alle Sprachen, für die es Wörterbücher gibt */
+export type Locale = "en" | "de";
+/** Sprachen, die auf der Seite tatsächlich angeboten werden */
+export const locales: readonly Locale[] = ["en"];
 
 export const defaultLocale: Locale = "en";
 

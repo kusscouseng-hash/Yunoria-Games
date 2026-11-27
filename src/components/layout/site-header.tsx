@@ -5,7 +5,6 @@ import { withLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { Logo } from "./logo";
 import { MobileMenu } from "./mobile-menu";
-import { LanguageSwitcher, LanguageSwitcherLinks } from "./language-switcher";
 import { sidebarGroups } from "./sidebar";
 import { LoginButton, UserNav } from "./user-nav";
 
@@ -19,8 +18,7 @@ export async function SiteHeader() {
         <MobileMenu
           groups={sidebarGroups(locale, dict)}
           homeHref={withLocale(locale, "/")}
-          locale={locale}
-          labels={{ open: dict.a11y.openMenu, close: dict.a11y.closeMenu, nav: dict.a11y.mobileNav, language: dict.a11y.language }}
+          labels={{ open: dict.a11y.openMenu, close: dict.a11y.closeMenu, nav: dict.a11y.mobileNav }}
         />
         <Link href={withLocale(locale, "/")} aria-label={`${siteConfig.name} – ${dict.a11y.homeLink}`} className="shrink-0">
           <Logo compact />
@@ -46,11 +44,6 @@ export async function SiteHeader() {
         </form>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          <div className="hidden md:block">
-            <Suspense fallback={<LanguageSwitcherLinks current={locale} label={dict.a11y.language} />}>
-              <LanguageSwitcher current={locale} label={dict.a11y.language} />
-            </Suspense>
-          </div>
           <Suspense fallback={<LoginButton locale={locale} loginLabel={dict.nav.login} />}>
             <UserNav locale={locale} loginLabel={dict.nav.login} accountLabel={dict.auth.userMenu} />
           </Suspense>

@@ -9,7 +9,7 @@ for (const vp of [{ name: "mobile", width: 390, height: 844, isMobile: true, has
   await p.setViewport(vp);
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
-  for (const lang of ["en", "de"]) {
+  for (const lang of ["en"]) {
     const r = await p.goto(`${BASE}/${lang}`, { waitUntil: "load" });
     check(r.status() === 200, `${vp.name} /${lang} status 200`);
     const cards = await p.$$eval('a[href*="/arcade/"]', (a) => new Set(a.map((x) => x.getAttribute("href"))).size);
@@ -24,34 +24,41 @@ for (const vp of [{ name: "mobile", width: 390, height: 844, isMobile: true, has
     check(new URL(p.url()).pathname === "/en", `${vp.name} /play/stars redirects home (${p.url()})`);
     check(r.status() === 200, `${vp.name} redirect target 200`);
   }
-  for (const path of ["/de/c/puzzle", "/de/c/new", "/de/search?q=ball"]) {
+  for (const path of ["/en/c/puzzle", "/en/c/new", "/en/search?q=ball"]) {
     const r = await p.goto(`${BASE}${path}`, { waitUntil: "load" });
     check(r.status() === 200, `${vp.name} ${path} status 200`);
     const n = await p.$$eval('a[href*="/arcade/"]', (a) => a.length);
     check(n > 0, `${vp.name} ${path} has ${n} games`);
   }
   {
-    await p.goto(`${BASE}/de/c/originals`, { waitUntil: "load" });
+    await p.goto(`${BASE}/en/c/originals`, { waitUntil: "load" });
     const n = await p.$$eval('main a[href*="/arcade/"], main a[href*="/play/"]', (a) => a.length);
     check(n === 0, `${vp.name} /c/originals shows no games (${n})`);
   }
   {
-    await p.goto(`${BASE}/de`, { waitUntil: "load" });
+    await p.goto(`${BASE}/en`, { waitUntil: "load" });
     const href = await p.$eval('a[href*="/arcade/"]', (a) => a.getAttribute("href"));
     const r = await p.goto(`${BASE}${href}`, { waitUntil: "domcontentloaded" });
     check(r.status() === 200, `${vp.name} ${href} status 200`);
     await new Promise((s) => setTimeout(s, 1500));
-    const hasConsent = await p.$$eval("button", (bs) => bs.some((b) => b.textContent.trim() === "Spiel laden"));
+    const hasConsent = await p.$$eval("button", (bs) => bs.some((b) => b.textContent.trim() === "Load game"));
     check(hasConsent, `${vp.name} game page shows consent button`);
-    const zoom = await p.$('button[aria-label="Größer"]');
+    const zoom = await p.$('button[aria-label="Bigger"]');
     check(!!zoom, `${vp.name} zoom buttons present`);
   }
-  for (const path of ["/en/leaderboard", "/en/leaderboard/guilds", "/en/guilds", "/de/leaderboard"]) {
+  {
+    // Deutsche Version entfernt → Weiterleitung auf Englisch
+    const r = await p.goto(`${BASE}/de/c/puzzle`, { waitUntil: "load" });
+    check(new URL(p.url()).pathname === "/en/c/puzzle" && r.status() === 200, `${vp.name} /de redirects to /en (${p.url()})`);
+    const sw = await p.$$eval("a", (a) => a.filter((x) => x.textContent.trim() === "DE").length);
+    check(sw === 0, `${vp.name} no language switch`);
+  }
+  for (const path of ["/en/leaderboard", "/en/leaderboard/guilds", "/en/guilds"]) {
     const r = await p.goto(`${BASE}${path}`, { waitUntil: "load" });
     check(r.status() === 200, `${vp.name} ${path} status 200`);
   }
   check(errors.length === 0, `${vp.name} no page errors ${errors.slice(0, 3).join(" | ")}`);
-  if (vp.name === "desktop") { await p.goto(`${BASE}/de`, { waitUntil: "load" }); await p.screenshot({ path: "/tmp/g-home.png", fullPage: true }); }
+  if (vp.name === "desktop") { await p.goto(`${BASE}/en`, { waitUntil: "load" }); await p.screenshot({ path: "/tmp/g-home.png", fullPage: true }); }
   await p.close();
 }
 await b.close();
