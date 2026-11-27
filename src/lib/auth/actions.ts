@@ -81,7 +81,7 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
   if (!available) return { error: "usernameTaken", values };
 
   const origin = await siteOrigin();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -90,6 +90,9 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
     },
   });
   if (error) return { error: mapAuthError(error.code), values };
+
+  // Ist in Supabase „E-Mail bestätigen“ ausgeschaltet, gibt es sofort eine Sitzung → direkt angemeldet weiter
+  if (data.session) redirect(withLocale(locale, "/"));
 
   // Aus Datenschutzgründen verrät Supabase nicht, ob die E-Mail schon registriert ist.
   // Wir zeigen deshalb immer denselben Hinweis: "Bitte E-Mail bestätigen".

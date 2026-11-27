@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import {
   updatePassword,
   type AuthFormState,
 } from "@/lib/auth/actions";
-import type { AuthErrorKey } from "@/lib/auth/validation";
+import { PASSWORD_MIN_LENGTH, isReservedUsername, isValidEmail, isValidUsername, type AuthErrorKey } from "@/lib/auth/validation";
 import { FormMessage } from "./auth-card";
 
 type T = Dictionary["auth"];
@@ -24,10 +24,81 @@ type Common = { t: T; locale: Locale };
 
 const initial: AuthFormState = {};
 
+/** Fehlerkasten oben im Formular – scrollt bei einem neuen Fehler ins Bild, damit man ihn sicher sieht. */
 function ErrorBox({ t, error }: { t: T; error?: AuthErrorKey }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [error]);
   return error ? (
-    <FormMessage tone="error">{t.errors[error]}</FormMessage>
+    <div ref={ref} role="alert">
+      <FormMessage tone="error">{t.errors[error]}</FormMessage>
+    </div>
   ) : null;
+}
+
+type Field = "username" | "email" | "password" | "confirm" | "terms";
+
+/** Fehler, die direkt beim Tippen geprüft werden (die Prüfung auf dem Server bleibt zusätzlich). */
+function checkFields(v: { username?: string; email: string; password: string; confirm?: string; terms?: boolean }, mode: "register" | "login" | "reset") {
+  const e: Partial<Record<Field, AuthErrorKey>> = {};
+  if (mode === "register") {
+    const u = v.username ?? "";
+    if (!isValidUsername(u)) e.username = "invalidUsername";
+    else if (isReservedUsername(u)) e.username = "usernameReserved";
+  }
+  if (mode !== "reset" && !isValidEmail(v.email.trim())) e.email = "invalidEmail";
+  if (mode === "login") {
+    if (!v.password) e.password = "passwordTooShort";
+  } else {
+    if (v.password.length < PASSWORD_MIN_LENGTH) e.password = "passwordTooShort";
+    if (v.confirm !== v.password) e.confirm = "passwordsDontMatch";
+  }
+  if (mode === "register" && !v.terms) e.terms = "termsRequired";
+  return e;
+}
+
+/** Vom Server gemeldeter Fehler → zu welchem Feld gehört er? */
+function serverField(error?: AuthErrorKey): Field | null {
+  switch (error) {
+    case "invalidUsername":
+    case "usernameTaken":
+    case "usernameReserved":
+      return "username";
+    case "invalidEmail":
+    case "userExists":
+      return "email";
+    case "passwordTooShort":
+    case "weakPassword":
+      return "password";
+    case "passwordsDontMatch":
+      return "confirm";
+    case "termsRequired":
+      return "terms";
+    default:
+      return null;
+  }
+}
+
+/** Zustand für Live-Prüfung: Felder zeigen Fehler, sobald man sie verlassen oder auf Absenden gedrückt hat. */
+function useLiveCheck(errors: Partial<Record<Field, AuthErrorKey>>) {
+  const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const show = (f: Field) => (submitted || touched[f] ? errors[f] : undefined);
+  const blur = (f: Field) => () => setTouched((t) => ({ ...t, [f]: true }));
+  /** Beim Absenden: bei Fehlern nicht abschicken, zum ersten fehlerhaften Feld springen */
+  const onSubmit = (e: FormEvent<HTMLFormElement>, order: Field[]) => {
+    setSubmitted(true);
+    const first = order.find((f) => errors[f]);
+    if (!first) return;
+    e.preventDefault();
+    const el = e.currentTarget.elements.namedItem(first);
+    if (el instanceof HTMLElement) {
+      el.focus();
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+  return { show, blur, onSubmit };
 }
 
 function Submit({
@@ -120,10 +191,14 @@ export function LoginForm({
   const [state, action, pending] = useActionState(signIn, {
     error: initialError,
   });
+  const [email, setEmail] = useState(state.values?.email ?? "");
+  const [password, setPassword] = useState("");
+  const errors = checkFields({ email, password }, "login");
+  const live = useLiveCheck(errors);
   return (
     <>
       <GoogleButton t={t} locale={locale} next={next} />
-      <form action={action} className="mt-4 space-y-4" noValidate>
+      <form action={action} onSubmit={(e) => live.onSubmit(e, ["email", "password"])} className="mt-4 space-y-4" noValidate>
         <input type="hidden" name="locale" value={locale} />
         {next && <input type="hidden" name="next" value={next} />}
         {confirmed && !state.error && (
@@ -136,7 +211,10 @@ export function LoginForm({
           type="email"
           autoComplete="email"
           required
-          defaultValue={state.values?.email}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onBlur={live.blur("email")}
+          error={live.show("email") && t.errors[live.show("email")!]}
         />
         <PasswordInput
           showLabel={t.fields.showPassword}
@@ -145,6 +223,10 @@ export function LoginForm({
           name="password"
           autoComplete="current-password"
           required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onBlur={live.blur("password")}
+          error={live.show("password") && t.fields.passwordRequired}
         />
         <div className="flex justify-end">
           <Link
@@ -176,6 +258,29 @@ export function LoginForm({
 // ---------------------------------------------------------------------
 export function RegisterForm({ t, locale }: Common) {
   const [state, action, pending] = useActionState(signUp, initial);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [terms, setTerms] = useState(false);
+  const errors = checkFields({ username, email, password, confirm, terms }, "register");
+  const live = useLiveCheck(errors);
+  // Vom Server gemeldete Fehler (z. B. Name vergeben) am passenden Feld zeigen, bis man dort etwas ändert
+  const [serverErr, setServerErr] = useState<{ field: Field; error: AuthErrorKey } | null>(null);
+  const [lastState, setLastState] = useState(state);
+  if (state !== lastState) {
+    setLastState(state);
+    const f = serverField(state.error);
+    setServerErr(f && state.error ? { field: f, error: state.error } : null);
+  }
+  const fieldError = (f: Field) => {
+    const k = live.show(f) ?? (serverErr?.field === f ? serverErr.error : undefined);
+    return k ? t.errors[k] : undefined;
+  };
+  const edit = (f: Field, set: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    set(e.target.value);
+    if (serverErr?.field === f) setServerErr(null);
+  };
   if (state.success) {
     return (
       <div className="space-y-4">
@@ -195,19 +300,26 @@ export function RegisterForm({ t, locale }: Common) {
   return (
     <>
       <GoogleButton t={t} locale={locale} />
-      <form action={action} className="mt-4 space-y-4" noValidate>
+      <form
+        action={action}
+        onSubmit={(e) => live.onSubmit(e, ["username", "email", "password", "confirm", "terms"])}
+        className="mt-4 space-y-4"
+        noValidate
+      >
         <input type="hidden" name="locale" value={locale} />
-        <ErrorBox t={t} error={state.error} />
+        {/* Fehler ohne eigenes Feld (z. B. zu viele Versuche) oben anzeigen */}
+        <ErrorBox t={t} error={serverField(state.error) ? undefined : state.error} />
         <Input
           label={t.fields.username}
           hint={t.fields.usernameHint}
           name="username"
           autoComplete="username"
           required
-          minLength={3}
           maxLength={20}
-          pattern="[A-Za-z0-9_]{3,20}"
-          defaultValue={state.values?.username}
+          value={username}
+          onChange={edit("username", setUsername)}
+          onBlur={live.blur("username")}
+          error={fieldError("username")}
         />
         <Input
           label={t.fields.email}
@@ -215,18 +327,27 @@ export function RegisterForm({ t, locale }: Common) {
           type="email"
           autoComplete="email"
           required
-          defaultValue={state.values?.email}
+          value={email}
+          onChange={edit("email", setEmail)}
+          onBlur={live.blur("email")}
+          error={fieldError("email")}
         />
         <PasswordInput
           showLabel={t.fields.showPassword}
           hideLabel={t.fields.hidePassword}
           label={t.fields.password}
-          hint={t.fields.passwordHint}
+          hint={
+            password.length > 0 && password.length < PASSWORD_MIN_LENGTH
+              ? t.fields.passwordCount.replace("{n}", String(password.length)).replace("{min}", String(PASSWORD_MIN_LENGTH))
+              : t.fields.passwordHint
+          }
           name="password"
-
           autoComplete="new-password"
           required
-          minLength={8}
+          value={password}
+          onChange={edit("password", setPassword)}
+          onBlur={live.blur("password")}
+          error={fieldError("password")}
         />
         <PasswordInput
           showLabel={t.fields.showPassword}
@@ -235,13 +356,22 @@ export function RegisterForm({ t, locale }: Common) {
           name="confirm"
           autoComplete="new-password"
           required
-          minLength={8}
+          value={confirm}
+          onChange={edit("confirm", setConfirm)}
+          onBlur={live.blur("confirm")}
+          error={fieldError("confirm")}
         />
         <label className="flex items-start gap-2.5 text-sm text-muted">
           <input
             type="checkbox"
             name="terms"
             required
+            checked={terms}
+            onChange={(e) => {
+              setTerms(e.target.checked);
+              if (serverErr?.field === "terms") setServerErr(null);
+            }}
+            aria-invalid={fieldError("terms") ? true : undefined}
             className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
           />
           <span>
@@ -256,6 +386,12 @@ export function RegisterForm({ t, locale }: Common) {
             {t.register.acceptTermsAfter}
           </span>
         </label>
+        {fieldError("terms") && (
+          <p className="-mt-2 flex items-start gap-1.5 text-xs font-semibold text-red-300">
+            <span aria-hidden="true">⚠</span>
+            {fieldError("terms")}
+          </p>
+        )}
         <p className="text-xs text-subtle">{t.register.terms}</p>
         <Submit
           pending={pending}
@@ -326,8 +462,12 @@ export function ForgotPasswordForm({ t, locale }: Common) {
 // ---------------------------------------------------------------------
 export function ResetPasswordForm({ t, locale }: Common) {
   const [state, action, pending] = useActionState(updatePassword, initial);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const errors = checkFields({ email: "", password, confirm }, "reset");
+  const live = useLiveCheck(errors);
   return (
-    <form action={action} className="space-y-4" noValidate>
+    <form action={action} onSubmit={(e) => live.onSubmit(e, ["password", "confirm"])} className="space-y-4" noValidate>
       <input type="hidden" name="locale" value={locale} />
       <ErrorBox t={t} error={state.error} />
       <PasswordInput
@@ -336,10 +476,12 @@ export function ResetPasswordForm({ t, locale }: Common) {
         label={t.fields.newPassword}
         hint={t.fields.passwordHint}
         name="password"
-
         autoComplete="new-password"
         required
-        minLength={8}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        onBlur={live.blur("password")}
+        error={live.show("password") && t.errors[live.show("password")!]}
       />
       <PasswordInput
         showLabel={t.fields.showPassword}
@@ -348,7 +490,10 @@ export function ResetPasswordForm({ t, locale }: Common) {
         name="confirm"
         autoComplete="new-password"
         required
-        minLength={8}
+        value={confirm}
+        onChange={(e) => setConfirm(e.target.value)}
+        onBlur={live.blur("confirm")}
+        error={live.show("confirm") && t.errors[live.show("confirm")!]}
       />
       <Submit
         pending={pending}
