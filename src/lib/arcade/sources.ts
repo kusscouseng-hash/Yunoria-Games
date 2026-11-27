@@ -66,8 +66,40 @@ export async function getPicks(): Promise<ArcadeGame[] | null> {
   }
 }
 
+export type HiddenGame = { id: string; source: ArcadeSource; title: string; banner: string };
+
+/**
+ * Vom Admin versteckte Spiele (erscheinen nirgends, Spielseite gibt 404).
+ * null, wenn die Tabelle noch fehlt (Migration nicht ausgeführt).
+ */
+export async function getHidden(): Promise<HiddenGame[] | null> {
+  "use cache";
+  cacheTag(PICKS_TAG);
+  cacheLife("hours");
+  try {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from("arcade_hidden")
+      .select("game_id, source, title, banner")
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (error || !data) return null;
+    return data
+      .filter((r) => r.source === "gpx" || r.source === "gd")
+      .map((r) => ({ id: r.game_id, source: r.source, title: r.title, banner: r.banner }));
+  } catch {
+    return null;
+  }
+}
+
+/** Nur die IDs der versteckten Spiele (zum Herausfiltern) */
+export async function hiddenIds(): Promise<Set<string>> {
+  return new Set(((await getHidden()) ?? []).map((h) => h.id));
+}
+
 /** Ein Spiel finden – erst in der Auswahl, dann in den Katalogen (alte Links, Vorschau im Admin) */
 export async function findArcadeGame(id: string): Promise<ArcadeGame | null> {
+  if ((await hiddenIds()).has(id)) return null;
   const picks = await getPicks();
   const picked = picks?.find((g) => g.id === id);
   if (picked) return activeSources().includes(picked.source) ? picked : null;

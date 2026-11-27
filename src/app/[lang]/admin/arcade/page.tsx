@@ -4,9 +4,9 @@ import Link from "next/link";
 import { withLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { requireAdmin } from "@/lib/auth/admin";
-import { togglePick } from "@/lib/arcade/picks-actions";
-import { activeSources, getPicks, providerCatalog, providerInfo } from "@/lib/arcade/sources";
-import { type ArcadeGame, type ArcadeSource } from "@/lib/arcade/types";
+import { toggleHidden, togglePick } from "@/lib/arcade/picks-actions";
+import { activeSources, getHidden, getPicks, providerCatalog, providerInfo } from "@/lib/arcade/sources";
+import { type ArcadeCategory, type ArcadeSource } from "@/lib/arcade/types";
 import { CATEGORY_ICON, SITE_CATEGORIES, isSiteCategory } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
 
@@ -36,14 +36,21 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
   const sp = await searchParams;
   const sources = activeSources();
   const view = one(sp.view);
-  const tab: ArcadeSource | "picked" = view === "gpx" || view === "gd" ? view : view === "picked" ? "picked" : (sources[0] ?? "picked");
+  type Tab = ArcadeSource | "picked" | "hidden";
+  const tab: Tab = view === "gpx" || view === "gd" || view === "picked" || view === "hidden" ? view : (sources[0] ?? "picked");
   const q = one(sp.q).trim().slice(0, 60);
   const cat = isSiteCategory(one(sp.cat)) ? one(sp.cat) : "";
   const page = Math.max(1, Number.parseInt(one(sp.page), 10) || 1);
 
   const picks = (await getPicks()) ?? null;
+  const hidden = await getHidden();
   const pickedIds = new Set((picks ?? []).map((g) => g.id));
-  let games: ArcadeGame[] = tab === "picked" ? (picks ?? []) : await providerCatalog(tab);
+  const hiddenSet = new Set((hidden ?? []).map((g) => g.id));
+  type Card = { id: string; source: ArcadeSource; title: string; banner: string; category?: ArcadeCategory };
+  let games: Card[] =
+    tab === "hidden"
+      ? (hidden ?? [])
+      : (tab === "picked" ? (picks ?? []) : await providerCatalog(tab)).filter((g) => !hiddenSet.has(g.id));
   if (cat) games = games.filter((g) => g.category === cat);
   if (q.length >= 2) {
     const needle = q.toLowerCase();
@@ -61,9 +68,10 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
     return s ? `${base}?${s}` : base;
   };
 
-  const tabs: { key: ArcadeSource | "picked"; label: string }[] = [
+  const tabs: { key: Tab; label: string }[] = [
     { key: "picked", label: `Meine Auswahl (${picks?.length ?? 0})` },
     ...sources.map((s) => ({ key: s, label: providerInfo(s).name })),
+    { key: "hidden", label: `Versteckt (${hidden?.length ?? 0})` },
   ];
 
   return (
@@ -73,10 +81,16 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
         <p className="mt-1 max-w-3xl text-sm text-muted">
           Such dir die besten Spiele aus. Auf der Seite erscheinen nur Spiele aus „Meine Auswahl“ (plus eure eigenen Spiele).
           Solange die Auswahl leer ist, werden wie bisher die GamePix-Spiele gezeigt. Mit „Testen“ öffnest du ein Spiel in einem neuen Tab.
+          Mit „Verstecken“ verschwindet ein Spiel für alle – auch aus deinen Listen hier. Unter „Versteckt“ kannst du es wieder zeigen.
         </p>
         {picks === null && (
           <p className="mt-3 rounded-xl border border-border bg-surface-2 p-3 text-sm font-semibold">
             Die Tabelle für die Auswahl fehlt noch: Führe die Migration <code>20261127220000_arcade_picks.sql</code> im Supabase-SQL-Editor aus.
+          </p>
+        )}
+        {hidden === null && (
+          <p className="mt-3 rounded-xl border border-border bg-surface-2 p-3 text-sm font-semibold">
+            Die Tabelle für versteckte Spiele fehlt noch: Führe die Migration <code>20261128000000_arcade_hidden.sql</code> im Supabase-SQL-Editor aus.
           </p>
         )}
       </div>
@@ -126,7 +140,11 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
 
       {shown.length === 0 ? (
         <p className="rounded-2xl border border-border bg-surface p-6 text-center text-sm text-muted">
-          {tab === "picked" ? "Noch keine Spiele ausgewählt. Wechsle oben zu einem Anbieter und klicke bei guten Spielen auf „Aufnehmen“." : "Keine Spiele gefunden."}
+          {tab === "picked"
+            ? "Noch keine Spiele ausgewählt. Wechsle oben zu einem Anbieter und klicke bei guten Spielen auf „Aufnehmen“."
+            : tab === "hidden"
+              ? "Keine versteckten Spiele."
+              : "Keine Spiele gefunden."}
         </p>
       ) : (
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
@@ -139,34 +157,58 @@ async function AdminBody({ locale, searchParams }: { locale: Locale; searchParam
                 <div className="flex flex-1 flex-col gap-2 p-3">
                   <p className="line-clamp-2 text-sm font-bold">{g.title}</p>
                   <p className="text-xs text-subtle">
-                    {CATEGORY_ICON[g.category]} {g.category} · {providerInfo(g.source).name}
+                    {g.category ? `${CATEGORY_ICON[g.category]} ${g.category} · ` : ""}
+                    {providerInfo(g.source).name}
                   </p>
-                  <div className="mt-auto flex gap-2">
-                    <a
-                      href={withLocale(locale, `/arcade/${g.id}`)}
-                      target="_blank"
-                      rel="noopener"
-                      className="flex h-9 flex-1 items-center justify-center rounded-lg bg-surface-2 text-sm font-semibold hover:bg-surface-3"
-                    >
-                      Testen
-                    </a>
-                    {picks !== null && (
-                      <form action={togglePick} className="flex-1">
+                  {tab === "hidden" ? (
+                    <form action={toggleHidden} className="mt-auto">
+                      <input type="hidden" name="source" value={g.source} />
+                      <input type="hidden" name="id" value={g.id} />
+                      <input type="hidden" name="mode" value="show" />
+                      <button type="submit" className="h-9 w-full rounded-lg bg-accent text-sm font-bold text-accent-foreground hover:bg-accent-hover">
+                        Wieder zeigen
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                    <div className="mt-auto flex gap-2">
+                      <a
+                        href={withLocale(locale, `/arcade/${g.id}`)}
+                        target="_blank"
+                        rel="noopener"
+                        className="flex h-9 flex-1 items-center justify-center rounded-lg bg-surface-2 text-sm font-semibold hover:bg-surface-3"
+                      >
+                        Testen
+                      </a>
+                      {picks !== null && (
+                        <form action={togglePick} className="flex-1">
+                          <input type="hidden" name="source" value={g.source} />
+                          <input type="hidden" name="id" value={g.id} />
+                          <input type="hidden" name="mode" value={picked ? "remove" : "add"} />
+                          <button
+                            type="submit"
+                            className={cn(
+                              "h-9 w-full rounded-lg text-sm font-bold",
+                              picked ? "border border-border-strong text-muted hover:text-foreground" : "bg-accent text-accent-foreground hover:bg-accent-hover",
+                            )}
+                          >
+                            {picked ? "Entfernen" : "Aufnehmen"}
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                    {hidden !== null && (
+                      <form action={toggleHidden}>
                         <input type="hidden" name="source" value={g.source} />
                         <input type="hidden" name="id" value={g.id} />
-                        <input type="hidden" name="mode" value={picked ? "remove" : "add"} />
-                        <button
-                          type="submit"
-                          className={cn(
-                            "h-9 w-full rounded-lg text-sm font-bold",
-                            picked ? "border border-border-strong text-muted hover:text-foreground" : "bg-accent text-accent-foreground hover:bg-accent-hover",
-                          )}
-                        >
-                          {picked ? "Entfernen" : "Aufnehmen"}
+                        <input type="hidden" name="mode" value="hide" />
+                        <button type="submit" className="h-8 w-full rounded-lg text-xs font-semibold text-muted hover:bg-surface-2 hover:text-foreground">
+                          Verstecken
                         </button>
                       </form>
                     )}
-                  </div>
+                    </>
+                  )}
                 </div>
               </li>
             );

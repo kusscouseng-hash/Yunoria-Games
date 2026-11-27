@@ -1,6 +1,6 @@
 import "server-only";
 import { withLocale, type Locale } from "@/i18n/config";
-import { activeSources, getPicks, providerCatalog } from "@/lib/arcade/sources";
+import { activeSources, getPicks, hiddenIds, providerCatalog } from "@/lib/arcade/sources";
 import type { ArcadeGame } from "@/lib/arcade/types";
 import { OWN_GAMES_ENABLED, VISIBLE_GAMES, type GameInfo, type GameSlug } from "@/lib/games/registry";
 
@@ -102,12 +102,16 @@ export function ownTiles(locale: Locale): Tile[] {
 /**
  * Partner-Spiele für die öffentliche Seite: die handverlesene Auswahl aus dem Admin-Bereich.
  * Solange noch nichts ausgewählt ist, wie bisher die bestbewerteten GamePix-Spiele.
+ * Versteckte Spiele fallen immer raus.
  */
 export async function arcadeTiles(locale: Locale): Promise<Tile[]> {
   const active = activeSources();
   if (active.length === 0) return [];
   const picks = await getPicks();
-  const games = picks && picks.length > 0 ? picks.filter((g) => active.includes(g.source)) : await providerCatalog("gpx");
+  const hidden = await hiddenIds();
+  const games = (picks && picks.length > 0 ? picks.filter((g) => active.includes(g.source)) : await providerCatalog("gpx")).filter(
+    (g) => !hidden.has(g.id),
+  );
   return games.map((g) => ({
     kind: "arcade" as const,
     key: `${g.source}:${g.id}`,

@@ -280,6 +280,11 @@ export type Database = {
       game_recent: Table<{ user_id: string; game_key: string; played_at: string }, never, never>;
       game_score_events: Table<GameScoreEventRow, never, never>;
       arcade_picks: Table<ArcadePickRow, Omit<ArcadePickRow, "created_at">, never>;
+      arcade_hidden: Table<
+        { game_id: string; source: "gpx" | "gd"; title: string; banner: string; created_at: string },
+        { game_id: string; source: "gpx" | "gd"; title: string; banner: string },
+        never
+      >;
       user_activity_days: Table<ActivityDayRow, never, never>;
       chapter_texts: Table<ChapterTextRow, Omit<ChapterTextRow, "created_at" | "updated_at">, Partial<ChapterTextRow>>;
       chapter_pages: Table<ChapterPageRow, Omit<ChapterPageRow, "id">, Partial<Omit<ChapterPageRow, "id">>>;
